@@ -1,0 +1,3 @@
+useDynLib(gruyere)
+exportPattern("^[^\\.]")
+
