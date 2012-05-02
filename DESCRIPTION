@@ -1,8 +1,8 @@
 Package: gruyere
 Type: Package
 Title: Population dynamics in the style of Yodzis and Innes (1992)
-Version: 0.1-6
-Date: 2012-04-19
+Version: 0.1-7
+Date: 2012-05-02
 Author: Lawrence Hudson with contributions from Dan Reuman
 Maintainer: Lawrence N Hudson <lawrence.hudson08@imperial.ac.uk>
 Description: Population dynamics in the style of Yodzis and Innes (1992).
