@@ -19,7 +19,7 @@
     <div class="wrapper">
       <header>
         <h1>Gruyere</h1>
-        <p>Population dynamics in the style of Yodzis and Innes (1992) in R</p>
+        <p>Population dynamics in the style of Yodzis &amp; Innes (1992) in R</p>
         <p class="view"><a href="https://github.com/quicklizard99/gruyere">View the Project on GitHub <small>quicklizard99/gruyere</small></a></p>
         <ul>
 <!--          <li><a href="https://github.com/quicklizard99/gruyere/zipball/master">Download <strong>ZIP File</strong></a></li>-->
@@ -30,7 +30,7 @@
 
       <section>
         <h2>Releases</h2>
-        <p>Links to the development release of Gruyere are below. You can download the appropriate file for your system and install it in the usual way.</p>
+        <p>You can download the current release of Gruyere for your system and install it in the usual way. 
 
         <ul>
         <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-7.zip">Windows</a> (32- and 64-bit)
@@ -38,40 +38,106 @@
         <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-7.tar.gz">Source</a> (If you use Linux or Unix)
         </ul>
 
-        <p>Cheddar is in development. It contains many unit tests but does not yet contain help or vignettes. Please provide <a href="https://github.com/quicklizard99/gruyere-/issues">feedback and bug reports</a>. Stable releases will appear on <a href="http://cran.r-project.org/">CRAN</a>.</p>
+        <p>
+          Gruyere is in development. It contains many unit tests but does not yet contain help or vignettes. 
+          Please give it a go and send questions, comments or other feedback to me (<a href="mailto:lawrence.hudson08@imperial.ac.uk">lawrence.hudson08@imperial.ac.uk</a>), or use the <a href="https://github.com/quicklizard99/gruyere-/issues">issue tracker</a>. 
+          Stable releases will be submitted to <a href="http://cran.r-project.org/">CRAN</a>.
+        </p>
       </section>
 
       <section>
         <h3>Overview</h3>
         <p>
-          Population dynamics in the style of Yodzis and Innes (1992) in <a href="http://www.r-project.org//">R</a>. 
-          This package depends upon <a href="http://quicklizard99.github.com/cheddar/">Cheddar</a>.
+          Gruyere is an <a href="http://www.r-project.org//">R</a> package for 
+          running simulations of a multi-species dynamical model in the style 
+          of <a href="#YodzisAndInnes1992AmNat">Yodzis &amp; Innes (1992)</a>. 
+          This package depends upon <a href="http://quicklizard99.github.com/cheddar/">Cheddar</a> and 
+          <a href="http://cran.r-project.org/web/packages/deSolve/index.html">deSolve</a>.
+        </p>
+
+        <p>
+          This model is synthesis between allometric scaling and 
+          <a href="http://en.wikipedia.org/wiki/Lotka_volterra">Lotka-Volterra</a>-style 
+          dynamical models 
+          (<a href="#YodzisAndInnes1992AmNat">Yodzis &amp; Innes, 1992</a> 
+           expanded by 
+           <a href="#BroseEtAl2006EcolLett">Brose et al, 2006</a> and 
+           <a href="#WilliamsEtAl2007">Williams et al, 2007</a>). 
+          Differential equations model the flow of energy between species. 
+          Rates of growth, ingestion and respiration are computed from 
+          inter-specific 'rate &prop; body mass<sup>b</sup>' relationships 
+          observed in empirical data (e.g. 
+          <a href="#Peters1983">Peters, 1983</a> and 
+          <a href="#SavageEtAl2004FunctEcol">Savage et al, 2004</a>). 
+          This approach avoids the need to derive species- or 
+          population-specific parameters, sacrificing some accuracy for 
+          generality and making it possible to investigate the dynamics of 
+          complex communities. The model has been used to draw conclusions on 
+          a wide range of phenomena such as the importance of resource-consumer 
+          body mass ratios 
+          (<a href="#BroseEtAl2006EcolLett">Brose et al, 2006</a>; 
+           <a href="#OttoEtAl2007Nature">Otto et al, 2007</a>), 
+          the role of functional response form 
+          (<a href="#Williams2008TheorEcol">Williams, 2008</a>) and the 
+          effects of food web motifs 
+          (<a href="#StoufferAndBascompte2010EcolLett">Stouffer and Bascompte, 2010</a>) 
+          on species' persistence and community stability. 
+          <a href="#BerlowEtAl2009PNAS">Berlow et al (2009)</a> used the model 
+          to demonstrate the possiblity of predicting responses to species' extinctions. 
+        </p>
+
+        <p>
+          Gruyere makes this commonly-used modelling approach available to 
+          users of the <a href="http://www.r-project.org/">R</a> language.
         </p>
       </section>
 
       <section>
         <h3>Video</h3>
         <p>
-           The short video below was created using R, Gruyere and <a href="file:///home/lawrence/Dropbox/projects/cheddar/index.html">Cheddar</a>. 
-           It shows two dynamical model simulations of the dataset from Tuesday Lake, Michigan, USA, sampled in 1984 (1,2,3). 
-           The graphs show log-transformed numerical abundance (N, individuals per metre cubed) against body mass (M, kg). 
-           The empirical measured N of primary producers is shown by green circles, invertebrates by blue squares and vertebrates by purple diamonds. 
+           The short video below was created using R, Gruyere and Cheddar. 
+           It shows two dynamical model simulations of the dataset from 
+           <a href="http://maps.google.co.uk/maps?q=Tuesday+Lake,+Michigan&amp;hl=en&amp;ll=46.250535,-89.501152&amp;spn=0.007389,0.01929&amp;sll=53.800651,-4.064941&amp;sspn=12.948388,39.506836&amp;hnear=Tuesday+Lake&amp;t=h&amp;z=16">Tuesday Lake</a>, 
+           Michigan, USA, sampled in 1984 
+           (<a href="#CarpenterAndKitchell1996">Carpenter &amp; Kitchell 1996</a>; 
+            <a href="#CohenEtAl2003PNAS">Cohen et al 2003</a>; 
+            <a href="#JonssonEtAl2005AER">Jonsson et al, 2005</a>). 
+           This community contains 50 species and over 250 feeding 
+           relationships. The graphs show log-transformed numerical abundance 
+           (N, individuals per metre cubed) against body mass (M, kg). 
+           The empirical measured N of primary producers is shown by green 
+           circles, invertebrates by blue squares and vertebrates by purple 
+           diamonds. 
            Crosses show the model simulation population densities.
         </p>
 
         <p>
             The two graphs show simulation runs for different parameter sets. 
-            The left-hand plot uses model parameters that result in good model-data agreement. 
-            The right-hand plot uses model parameters that result in poor model-data agreement.
+            The left-hand plot uses model parameters that result in good 
+            model-data agreement. 
+            The right-hand plot uses model parameters that result in poor 
+            model-data agreement.
         </p>
 
         <iframe width="560" height="315" src="http://www.youtube.com/embed/dXw8qVMGbsE" frameborder="0" allowfullscreen></iframe>
+      </section>
 
-        <ol>
-        <li>Carpenter, S. & Kitchell, J. (1996) <span style="font-style: italic">The trophic cascade in lakes</span>, Cambridge University Press.</li>
-        <li>Jonsson, T., Cohen, J.E. & Carpenter, S.R. (2005) Food webs, body size, and species abundance in ecological community description, <span style="font-style: italic">Advances In Ecological Research</span>, 36, 1–84.</li>
-        <li>Cohen, J., Jonsson, T. & Carpenter, S. (2003) Ecological community description using the food web, species abundance, and body size, <span style="font-style: italic">Proceedings of the National Academy of Sciences of the United States of America</span>, 100, 1781–1786.</li>
-        </ol>
+      <section>
+        <h3>References</h3>
+        <ul>
+        <li id="BerlowEtAl2009PNAS">Berlow, E., Dunne, J., Martinez, N., Stark, P., Williams, R. & Brose, U. (2009) Simple prediction of interaction strengths in complex food webs. <span style="font-style: italic">Proceedings of the National Academy of Sciences</span>, 106 (1), 187–191.</li>
+        <li id="BroseEtAl2006EcolLett">Brose, U, Williams, R, & Martinez, N. (2006) Allometric scaling enhances stability in complex food webs. <span style="font-style: italic">Ecology Letters</span> 9, 1228–1236.
+        <li id="CarpenterAndKitchell1996">Carpenter, S. & Kitchell, J. (1996) <span style="font-style: italic">The trophic cascade in lakes</span>, Cambridge University Press.</li>
+        <li id="CohenEtAl2003PNAS">Cohen, J., Jonsson, T. & Carpenter, S. (2003) Ecological community description using the food web, species abundance, and body size, <span style="font-style: italic">Proceedings of the National Academy of Sciences of the United States of America</span>, 100, 1781–1786.</li>
+        <li id="JonssonEtAl2005AER">Jonsson, T., Cohen, J.E. & Carpenter, S.R. (2005) Food webs, body size, and species abundance in ecological community description, <span style="font-style: italic">Advances In Ecological Research</span>, 36, 1–84.</li>
+        <li id="OttoEtAl2007Nature">Otto, S., Rall, B. & Brose, U. (2007) Allometric degree distributions facilitate food-web stability. <span style="font-style: italic">Nature</span>, 450 (7173), 1226–1229.</li>
+        <li id="Peters1983">Peters, R. H. (1983) <span style="font-style: italic">The ecological implications of body size</span>. Cambridge University Press.</li>
+        <li id="SavageEtAl2004FunctEcol">Savage, V., Gillooly, J., Woodruff, W., West, G., Allen, A., Enquist, B. & Brown, J. (2004b) The predominance of quarter-power scaling in biology. <span style="font-style: italic">Functional Ecology</span>, 18 (2), 257–282.</li>
+        <li id="StoufferAndBascompte2010EcolLett">Stouffer, D. & Bascompte, J. (2010) Understanding food-web persistence from local to global scales. <span style="font-style: italic">Ecology letters</span>, 13 (2), 154–161.</li>
+        <li id="WilliamsEtAl2007">Williams, R. J., Brose, U. & Martinez, N. D. (2007) Homage to Yodzis and Innes 1992: scaling up feeding-based population dynamics to complex ecological networks. In: Rooney, N., McCann, K. S. & Noakes, D. L. G. (eds.) <span style="font-style: italic">From energetics to ecosystems: the dynamics and structure of ecological systems</span>, chapter 2, pp. 37–51. Springer.</li>
+        <li id="Williams2008TheorEcol">Williams, R. J. (2008) Effects of network and dynamical model structure on species persistence in large model food webs. <span style="font-style: italic">Theoretical Ecology</span>, 1 (3), 141–151.</li>
+        <li id="YodzisAndInnes1992AmNat">Yodzis, P. & Innes, S. (1992) Body size and resource-consumer dynamics. <span style="font-style: italic">The American Naturalist</span>, 139 (6), 1151–1175.
+        </ul>
       </section>
     </div>
     <footer>
