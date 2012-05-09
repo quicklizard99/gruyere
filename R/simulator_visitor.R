@@ -254,24 +254,24 @@ VisitEnd.PlotBvTVisitor <- function(self, time, final.state)
 }
 
 
-TimeSimulationVisitor <- function()
+ElapsedTimeVisitor <- function()
 {
     # Inherits from CollectChunksVisitor
     self <- new.env(hash=TRUE, parent=emptyenv())
-    class(self) <- c('TimeSimulationVisitor', class(self))
+    class(self) <- c('ElapsedTimeVisitor', class(self))
     return(self)
 }
 
-VisitStart.TimeSimulationVisitor <- function(self, initial.state)
+VisitStart.ElapsedTimeVisitor <- function(self, initial.state)
 {
     assign('start', proc.time(), self)
 }
 
-VisitChunk.TimeSimulationVisitor <- function(self, chunk)
+VisitChunk.ElapsedTimeVisitor <- function(self, chunk)
 {
 }
 
-VisitEnd.TimeSimulationVisitor <- function(self, time, final.state)
+VisitEnd.ElapsedTimeVisitor <- function(self, time, final.state)
 {
     end <- proc.time()
     print('Simulation time:')
