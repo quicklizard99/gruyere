@@ -1,0 +1,433 @@
+\documentclass[11pt]{article}
+\usepackage[top=3cm, bottom=3cm, left=2cm, right=2cm]{geometry} % Page margins
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}            % /eqref
+\usepackage[authoryear,round]{natbib}
+\usepackage{booktabs}           % Some macros to improve tables
+
+%\VignetteIndexEntry{A quick introduction to Gruyere}
+%\VignetteKeyword{food web,community,dynamics,predator-prey,trophic interactions}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\R}{\textsf{R} }
+
+\begin{document}
+
+\title{Gruyere quickstart
+       (\Sexpr{packageDescription('gruyere', fields='Version')})}
+\author{Lawrence Hudson}
+\date{\Sexpr{packageDescription('gruyere', fields='Date')}}
+\maketitle
+
+\tableofcontents
+
+<<echo=FALSE>>=
+options(warn=2)
+
+library(gruyere)
+
+# Makes copy-paste much less painful
+options(continue=' ')
+options(width=90)
+options(prompt='> ')
+
+options(SweaveHooks = list(fig=function() par(mgp=c(2.5,1,0), 
+                                              mar=c(4,4,2.7,1.3),
+                                              oma=c(0,0,1,0),
+                                              cex.main=0.8)))
+@
+
+\section{Introduction}
+Gruyere is runs simulations of a multi-species dynamical model in the style 
+of \cite{YodzisAndInnes1992AmNat}. 
+This model is synthesis between allometric 
+scaling and Lotka-Volterra-style dynamical models 
+(\citealp{YodzisAndInnes1992AmNat} expanded by \citealp{BroseEtAl2006EcolLett} 
+and \citep{WilliamsEtAl2007}. 
+Differential equations model the flow of energy between species. Rates of 
+growth, ingestion and respiration are computed from inter-specific 
+`rate $\propto$ body mass$^\textnormal{b}$' relationships observed in 
+empirical data (e.g. \citealp{Peters1983} and 
+\citealp{SavageEtAl2004FunctEcol}. 
+This approach avoids the need to derive species- or population-specific 
+parameters, sacrificing some accuracy for generality and making it possible to 
+investigate the dynamics of complex communities. 
+Gruyere depends upon the Cheddar and deSolve  packages.
+
+There a great deal of flexibility in how simulations are run, how extinctions 
+are handled, what data is collected, when simulations terminate and what you 
+see as simulations run. Each of these areas is explained below with reference 
+to the `resource.consumer' demo - a simulation of the dynamics of a community 
+containing a single producer and a single consumer. 
+
+\section{The model}
+\subsection{Model}
+The model represents each population by a stock of biomass and models the 
+flow of biomass between producers, $i$, and consumers, $j$, as
+
+% TODO Williams 2007 equations and page numbers
+
+\begin{align}
+  \label{eq:producer}
+  \frac{dB_i}{dt}=  r_i B_i \hat G_i(B) -
+                    \sum\limits_{\textnormal{consumers},~j,~\textnormal{of}~i}
+                    J_{ij} B_j \hat F_{ij}(B) / f_{eij}
+\end{align}
+\begin{align}
+  \label{eq:consumer}
+  \frac{dB_j}{dt} = 
+                & - T_j B_j
+                    + \sum\limits_{\textnormal{resources},~i,~\textnormal{of}~j}
+                    e_{ij} J_{ij} B_j \hat F_{ij}(B) 
+                & - \sum\limits_{\textnormal{consumers},~k,~\textnormal{of}~j}
+                    J_{jk} B_k \hat F_{jk}(B) / f_{ejk}
+\end{align}
+where $B_i$ is the biomass of the $i^{\textnormal{th}}$ species
+\cite{YodzisAndInnes1992AmNat, WilliamsEtAl2007}.
+The parameters $r_i$, $J_{ij}$ and $T_j$ are computed using allometric
+relationships that assume negative quarter power scaling
+\cite{YodzisAndInnes1992AmNat, WilliamsEtAl2007}.
+The parameter $r_i$ is the mass-specific growth rate of the 
+$i^{\textnormal{th}}$ producer, 
+\begin{equation}
+  \label{eq:ri}
+   r_i = f_r a_r M_i^{-1/4}, 
+\end{equation}
+where $a_r$ is derived from empirical intra-specific data on maximum growth 
+rates and body masses, and $f_r$ is the fraction of maximum rate realised in 
+a given ecological context. The parameter $J_{ij}$ is the mass-specific 
+ingestion rate of the $j^\textnormal{th}$ consumer
+\begin{equation}
+  \label{eq:Jij}
+  J_{ij} = f_J a_J M_j^{-1/4} 
+\end{equation}
+for all $i$ consumed by $j$. Values of $a_J$ are derived from empirical 
+data on maximum ingestion rates. 
+The parameter $f_J$ is the fraction of the maximum possible ingestion rate 
+that is realised. The parameter $T_j$ is the mass-specific respiration rate of 
+the $j^\textnormal{th}$ consumer
+\begin{equation}
+  \label{eq:Tj}
+  T_j = a_T M_j^{-1/4}.
+\end{equation}
+Values of $a_T$ are computed from `typical' metabolic or respiration rate data. 
+
+Different temperature regulation modes result in different energy 
+requirements, e.g.\ a rabbit burns more energy than a lizard of 
+the same body mass, resulting in a higher rate of respiration and a larger 
+daily energy requirement. Rates of ingestion (equation \eqref{eq:Jij}) and 
+respiration (\eqref{eq:Tj}) are therefore computed according for each 
+\textit{metabolic category}. Empirically-derived values for each 
+of the \code{a constants} ($a_r$, $a_J$ and $a_T$) for each relevant 
+metabolic category are presented by \cite{YodzisAndInnes1992AmNat}. 
+The dimensionless fractions of maximum growth and ingestion ($f_r$ and 
+$f_J$) are specific to a given ecological context and values of these 
+\code{f constants} are unspecified by the model, although typical values are 
+suggested \citep{YodzisAndInnes1992AmNat, WilliamsEtAl2007}. 
+These \code{f constants} are similarly split by metabolic category. 
+These \code{a constants} and \code{f constants} are shown in 
+Table \ref{tab:allometric_params}.
+
+\begin{table}[ht]
+  \begin{center}
+    \begin{tabular}{lccc}
+      \toprule
+      Metabolic category & Growth & Ingestion & Field metabolic rate \\
+      \midrule
+      Producer & $f_r a_r$ & & \\
+      Invertebrate consumer & & $f_J a_J$ & $a_T$ \\
+      Vertebrate ectothermic consumer & & $f_J a_J$ & $a_T$ \\
+      \bottomrule 
+    \end{tabular}
+    \caption{Allometric parameters by metabolic category}
+    \label{tab:allometric_params}
+  \end{center}
+\end{table}
+
+Equations \eqref{eq:producer} and \eqref{eq:consumer} in the main text model 
+the flow of energy expressed in biomass density such as 
+kg m$^{-3}$ year$^{-1}$. 
+Parameters $r_i$, $J_{ij}$ and $T_j$ are in units of kg (kg year)$^{-1}$, which 
+simplifies to year$^{-1}$ and the allometric constants $a_r$, $a_J$ and $a_T$ 
+are in units of kg$^{1/4}$ year$^{-1}$ \cite{YodzisAndInnes1992AmNat}.
+
+For numerical simulations, model equations \eqref{eq:producer} and 
+\eqref{eq:consumer} are normalised to the growth rate of the
+primary producer with the smallest body mass, $m$ 
+\cite{YodzisAndInnes1992AmNat, WilliamsEtAl2007}. 
+NOTE: compare to Williams 2007 notation.
+The following constants are defined 
+\begin{eqnarray}
+  \label{eq:rho}
+  \rho_i = \frac{f_{r} a_{r}} {f_{r} a_{r}} 
+             \left(\frac{M_m}{M_i}\right)^{1/4}, 
+\end{eqnarray}
+\begin{eqnarray}
+  \label{eq:x}
+  x_j = \frac{a_{T}} {f_{r} a_{r}} 
+          \left(\frac{M_m}{M_j}\right)^{1/4}, 
+\end{eqnarray}
+\begin{eqnarray}
+  \label{eq:y}
+  y_{ij} = \frac{f_{J} a_{J}} {f_{r} a_{r}} 
+           \left(\frac{M_m}{M_j}\right)^{1/4}
+           \frac{1}{x_j}
+         = \frac{f_{Jij} a_{J}}{a_{T}}.
+\end{eqnarray}
+The constant $\rho_i$ is the relative mass-specific growth rate of producer 
+$i$ normalised to the time scale of the reference producer $m$. 
+The constant $x_j$ is the mass-specific metabolic rate of consumer $j$ 
+normalised to the time scale of $m$. The constant $y_{ij}$ is the 
+non-dimensional maximum ingestion rate of $j$ consuming $i$, relative to the 
+metabolic rate of $i$. 
+
+% TODO compare to Williams 2007 notation.
+
+A non-dimensional time variable is defined as 
+\begin{eqnarray}
+  \label{eq:t_prime}
+  t' = t r_m = t f_{r} a_{r} M_m^{-1/4}.
+\end{eqnarray}
+The non-dimensionalisation used here follows previous model definitions 
+\cite{WilliamsEtAl2007}. 
+Combining equations \eqref{eq:producer} and \eqref{eq:consumer} with 
+\eqref{eq:rho}-\eqref{eq:t_prime} with gives the final model equations 
+\begin{eqnarray}
+  \label{eq:normalised_producer}
+  \frac{dB_i}{dt'}=  \rho_i B_i \hat G_i(B) - 
+                 \sum\limits_{\textnormal{consumers},~j,~\textnormal{of}~i} 
+                 x_i y_{ij} B_j \hat F_{ij}(B) / e_{ij},
+\end{eqnarray}
+\begin{eqnarray}
+  \label{eq:normalised_consumer}
+  \frac{dB_j}{dt'} = - x_j B_j 
+             + \sum\limits_{\textnormal{consumers},~i,~\textnormal{of}~j} 
+               x_j y_{ij} B_j \hat F_{ij}(B) 
+             - \sum\limits_{\textnormal{consumers},~k,~\textnormal{of}~j} 
+               x_k y_{jk} B_k \hat F_{jk}(B) / e_{jk}.
+\end{eqnarray}
+Equations \eqref{eq:normalised_producer} and \eqref{eq:normalised_consumer} 
+are the model of \cite{WilliamsEtAl2007}, equations 2.17 and 2.18 on p 43. 
+The terms $\hat G_i$ and $\hat F_{ij}$ are the normalised (between 0 and 1) 
+growth model and functional response, respectively, both of which are functions 
+of the biomass densities of all populations ($B$). Gruyere uses functional 
+forms that have been used with this dynamical model in previous studies
+\cite{BroseEtAl2006EcolLett, Williams2008TheorEcol,
+StoufferAndBascompte2010EcolLett, BerlowEtAl2009PNAS, 
+RallEtAl2008Oikos}.
+
+\subsection{Growth model}
+The growth model is from \cite{Williams2008TheorEcol}, 
+\begin{equation}
+  \label{eq:growth_model}
+  \hat G_i(B) = 1 - \sum\limits_{\textnormal{producers},~k} a_{ik} B_k / K,
+\end{equation}
+in which producers compete for a global carrying capacity, $K$.
+
+\subsection{Functional response}
+The functional response is from \cite{Williams2008TheorEcol}, 
+\begin{align}
+  \label{eq:functional_response}
+  \hat F_{ij}(B) = \frac{(B_j / W)^{1+q}}
+                     {1 + d B_j +
+                     \sum\limits_{\textnormal{resources},~k,~\textnormal{of}~j}
+                     (B_k / W)^{1+q}},
+\end{align}
+where $q=0$ produces a type II response and $q>0$ produces a type III sigmoid
+response. A type III response models switching between resource species,
+i.e., the consumer's apparent preference for resources depends on the relative
+densities of its resource species \cite{WilliamsEtAl2007}.
+The higher the value of $q$, the closer the functional response is to a step
+function. The parameter $W$ is the half-saturation biomass: the biomass
+density at which the functional response results in a value of 0.5.
+The parameter $d$ controls the amount of intra-specific predator
+interference. Values of $d>0$ reduce consumption rates of the
+$j^\textnormal{th}$ population as the $j^\textnormal{th}$ population becomes
+more common \cite{Williams2008TheorEcol, BerlowEtAl2009PNAS}.
+Not all consumers ingest everything that they kill, represented by the
+ingestion efficiency, $f_{eij}$, which characterises the amount of biomass
+removed from $i$ that is ingested by $j$.
+The assimilation efficiency $e_{ij}$ is the fraction of biomass of $i$
+ingested by $j$ that is actually converted to biomass of $j$. The model 
+parallels models used in earlier work 
+\cite{YodzisAndInnes1992AmNat, BroseEtAl2006EcolLett, Williams2008TheorEcol, 
+WilliamsEtAl2007}.
+
+\section{Running a simulation}
+Running a simulation of the model requires the set of trophic links for the
+community as well as the body mass, initial biomass density and metabolic
+category (either producer, invertebrate or vertebrate ectotherm) for each 
+population. All of this information is taken from the Cheddar community being 
+simulated.
+
+\subsection{Preamble}
+Firstly, load the package and create the community.
+<<>>=
+library(gruyere)    # Cheddar and deSolve are loaded automatically by R
+
+# Create the Cheddar community whose dynamics will be simulated
+community <- Community(nodes=data.frame(node=c('R','C'), 
+                                        category=c('producer', 'invertebrate'), 
+                                        M=c(0.1, 1), 
+                                        N=c(100, 1)), 
+                       trophic.links=data.frame(resource='R', consumer='C'), 
+                       properties=c(title='Resource-consumer', 
+                                    M.units='kg', 
+                                    N.units='m^-2'))
+@
+
+\subsection{Model function}
+In principle this could be any sort of model. Gruyere currently defines two 
+models functions, both of which implement the model \cite{WilliamsEtAl2007}
+(\eqref{eq:normalised_producer} and \eqref{eq:normalised_consumer}). 
+\code{YodzisInnesDyDt} is a C implementation and \code{YodzisInnesDyDt\_R} is an 
+R implementation, which is relatively easy to understand and is included as a 
+reference and for testing the faster C implementation. The functional response 
+and growth models are from \cite{Williams2008TheorEcol}.
+<<>>=
+model <- YodzisInnesDyDt
+@
+
+\subsection{Model parameters}
+There are three steps to assemble model parameters. Firstly, the parameters 
+specification, a vector of values created. 
+By default ModelParamsSpec() uses Yodzis and Innes' values for the f constants 
+and a constants (\citealp{WilliamsEtAl2007}, values given in first table on p 
+44).
+<<>>=
+spec <- ModelParamsSpec(f.constants=AllFConstantsEqual())
+@
+Values can be specified by providing parameters to ModelParamsSpec(), e.g. 
+ModelParamsSpec(K=1, q=0.2, B0=1e-8).
+
+Secondly, intermediate parameters are created from the parameters specification 
+for a particular community. A list of values as in Williams et al 2007, 
+equations 2.8 and 2.9 and 2.10 – 2.12.
+<<>>=
+params <- IntermediateModelParams(community, spec)
+@
+
+The purpose of the intermediate stage is to allow deviations from the default 
+parameters. Changes can be made per-species or per-trophic-link. For example, 
+we might want to investigate the effect of increasing a single species' 
+respiration rate relative to other consumers or we might want to make 
+cannibalistic trophic links more efficient that other trophic links. It is 
+convenient to make these kinds of changes when the parameters are in this 
+easy-to-understand form.
+Lastly, the final model parameters. This returns a list of values as given in 
+Williams et al 2007, equations 2.17 and 2.18 and 2.14-2.16.
+<<>>=
+params <- BuildModelParams(community, params) # containing rho,x,z etc
+@
+
+\subsection{Simulation}
+There is presently only one simulation object: LSODASimulation(), which uses 
+the lsoda() function from the deSolve package.
+<<>>=
+simulation <- LSODASimulation(model=YodzisInnesDyDt, 
+                              params=params, 
+                              sampling.interval=0.1,
+                              use.atol=FALSE)
+@
+The time resolution is given by sampling.interval. atol specifies the absolute 
+error tolerance used by lsoda. The simulation is run in chunks of 100 time 
+units; we could change this by giving the chunk.time parameter.
+
+\subsection{Controller}
+This object governs when simulations should be terminated. Gruyere has three 
+different controllers. This example uses the simplest, which terminates 
+simulations when a time limit is reached.
+<<>>=
+controller <- MaxTimeController(100)
+@
+
+\subsection{Visitors}
+Zero or more visitor objects are shown time series chunks of the simulation as 
+it is run. A visitor could potentially do anything with a chunk of the time 
+series. There are a few visitors that give textual feedback and some that gives 
+graphical feedback. This example uses TimeSimulationVisitor(), which prints 
+the time elapsed once the simulation completes. There are also visitors for 
+recording the time series chunks. CollectChunksVisitor(), which we use here, 
+records all the chunks in memory. Another visitor, WriteChunksVisitor(), 
+writes each chunk of the time series to a file. 
+<<>>=
+collector <- CollectChunksVisitor() # Collect simulation results in memory
+visitors <- list(collector, ElapsedTimeVisitor())
+@
+
+\subsection{RunSimulation}
+This function glues everything together. It evolves the system as follows:
+\begin{enumerate}
+  \item request the next chunk from the simulation object
+  \item show the chunk to each of  the visitors
+  \item show the chunk to the controller
+  \item terminate the simulation if the controller says so, else go back to 
+        step 1
+  \item return the final system state, as given by the controller
+\end{enumerate}
+
+<<>>=
+res <- RunSimulation(initial.state=Biomass(community), 
+                     simulation=simulation,
+                     controller=controller, 
+                     visitors=visitors)
+@
+
+res holds the final simulation time and final biomasses for each species.
+\subsection{Visitors and results}
+We can use the time series assembled by the CollectChunksVisitor() object. 
+GetTimeSeries() returns the time series matrix. The first column is time, 
+columns 2 and 3 are biomasses of the resource and consumer respectively.
+<<>>=
+tseries <- GetTimeSeries(collector)
+head(tseries)
+@
+
+Plot
+
+\begin{center}
+\SweaveOpts{width=8,height=4}
+\setkeys{Gin}{width=\textwidth}
+<<fig=TRUE>>=
+# Plot the results
+par(mfrow=c(1,2))
+PlotBvT(community, tseries, col=c(1,2))
+
+# Equilibria: eqns 12 and 13 of Yodzis and Innes (1992) on p.1160 using x and 
+# y given in eqns 10 and 11, p 1156.
+Re <- with(params, B0[1,2] / ( (y[1,2]-1)^ (1/(q+1))))
+Ce <- as.numeric(with(params, (fe[1,2]*e[1,2] / x[2]) * Re * (1-Re/K)))
+abline(h=log10(Re), lty=2)
+mtext(~R[e], side=4, at=log10(Re), las=1, line=0)
+abline(h=log10(Ce), lty=2, col=2)
+mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
+
+plot(log10(tseries[,2]), log10(tseries[,3]), 
+     xlab=Log10BLabel(community, name="italic(B[R])"), 
+     ylab=Log10BLabel(community, name="italic(B[C])"), 
+     type="l", main="Consumer vs resource")
+axis(side=3, labels=FALSE)
+axis(side=4, labels=FALSE)
+abline(v=log10(Re))
+mtext(~R[e], side=3, at=log10(Re), las=1, line=0)
+abline(h=log10(Ce))
+mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
+@
+\end{center}
+
+%Ideas
+%Table to options for each aspect
+%Model function
+%Parameters
+%Controller
+%Simulation
+%Visitors
+%Recreate some results from previous research
+
+%Artificial 
+
+\bibliographystyle{plainnat}
+\bibliography{gruyere}
+
+\end{document}
+

@@ -9,6 +9,9 @@ community <- Community(nodes=data.frame(node=c('R','C'),
                                     M.units='kg', 
                                     N.units='m^-2'))
 
+# Model
+model <- YodzisInnesDyDt
+
 # Model parameters
 spec <- ModelParamsSpec(f.constants=AllFConstantsEqual())
 params <- IntermediateModelParams(community, spec)
@@ -19,13 +22,18 @@ simulation <- LSODASimulation(model=YodzisInnesDyDt,
                               sampling.interval=0.1,
                               use.atol=FALSE)
 
-# Collect simulation results in memory
-collector <- CollectChunksVisitor()
+controller <- MaxTimeController(200)
+
+collector <- CollectChunksVisitor() # Collect simulation results in memory
+visitors <- list(collector, ElapsedTimeVisitor())
 
 res <- RunSimulation(initial.state=Biomass(community), 
                      simulation=simulation,
-                     controller=MaxTimeController(200), 
-                     visitors=list(collector, TimeSimulationVisitor()))
+                     controller=controller, 
+                     visitors=visitors)
+
+tseries <- GetTimeSeries(collector)
+head(tseries)
 
 # Equilibria: eqns 12 and 13 of Yodzis and Innes (1992) on p.1160 using x and 
 # y given in eqns 10 and 11, p 1156.
@@ -41,22 +49,22 @@ Ce.m <- as.numeric(Ce.m)
 stopifnot(isTRUE(all.equal(Re, Re.m)))
 stopifnot(isTRUE(all.equal(Ce, Ce.m)))
 
-tseries <- get('tseries', collector)
-
 # Plot the results
 par(mfrow=c(1,2))
 PlotBvT(community, tseries, col=c(1,2))
 abline(h=log10(Re), lty=2)
-mtext(~R[e], side=4, at=log10(Re), las=1)
+mtext(~R[e], side=4, at=log10(Re), las=1, line=0)
 abline(h=log10(Ce), lty=2, col=2)
-mtext(~C[e], side=4, at=log10(Ce), las=1)
+mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
 
 plot(log10(tseries[,2]), log10(tseries[,3]), 
      xlab=Log10BLabel(community, name="italic(B[R])"), 
      ylab=Log10BLabel(community, name="italic(B[C])"), 
      type="l", main="Consumer vs resource")
+axis(side=3, labels=FALSE)
+axis(side=4, labels=FALSE)
 abline(v=log10(Re))
-mtext(~R[e], side=3, at=log10(Re), las=1, line=0.15)
-abline(h=log10(Ce), col=2)
-mtext(~C[e], side=4, at=log10(Ce), las=1)
+mtext(~R[e], side=3, at=log10(Re), las=1, line=0)
+abline(h=log10(Ce))
+mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
 
