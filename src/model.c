@@ -6,6 +6,15 @@
 #include <Rinternals.h>
 #include <R_ext/Print.h>
 
+// #define DEBUG_MODEL
+
+#ifdef DEBUG_MODEL
+#define DEBUG(X) { X; }
+#else
+#define DEBUG(X)
+#endif
+
+
 /* Some debug print functions */
 inline void PrintVector(const char *name, const double *v, const int *n)
 {
@@ -56,21 +65,21 @@ inline void initNA(double *v, int n)
     for(int x=0; x<n; x++) v[x] = NA_REAL;
 }
 
-void DebugPrintParms(const int *n, 
-                     const double *K, 
-                     const double *a, 
-                     const double *q, 
-                     const double *d, 
-                     const double *B0, 
-                     const int *producers, 
-                     const int *n_producers, 
-                     const int *consumers, 
-                     const int *n_consumers, 
-                     const double *rho, 
-                     const double *x, 
-                     const double *y, 
-                     const double *e, 
-                     const double *fe)
+void PrintParms(const int *n, 
+                const double *K, 
+                const double *a, 
+                const double *q, 
+                const double *d, 
+                const double *B0, 
+                const int *producers, 
+                const int *n_producers, 
+                const int *consumers, 
+                const int *n_consumers, 
+                const double *rho, 
+                const double *x, 
+                const double *y, 
+                const double *e, 
+                const double *fe)
 {
     /* Prints the parameters */
     Rprintf("n: [%d]\n", *n);
@@ -123,14 +132,11 @@ void YodzisInnesState(const int *n_species,     /* n species */
        large model food webs. Theoretical Ecology. */
 
     const int n = *n_species;
-    static const int debug = 0;
-    if(debug)
-    {
-        Rprintf("*************************\n");
-        PrintVector("B", B, n_species);
-        DebugPrintParms(n_species, K, a, q, d, B0, producers, n_producers, 
-                        consumers, n_consumers, rho, x, y, e, fe);
-    }
+
+    DEBUG(Rprintf("*************************\n"));
+    DEBUG(PrintVector("B", B, n_species));
+    DEBUG(PrintParms(n_species, K, a, q, d, B0, producers, n_producers, 
+                     consumers, n_consumers, rho, x, y, e, fe));
 
     /* Functional response numerator and denominator */
     /* Williams 2008 Eq 4 */
@@ -161,11 +167,8 @@ void YodzisInnesState(const int *n_species,     /* n species */
         }
     }
 
-    if(debug)
-    {
-        PrintMatrix("fr_numerator", fr_numerator, n_species);
-        PrintVector("fr_denominator", fr_denominator, n_species);
-    }
+    DEBUG(PrintMatrix("fr_numerator", fr_numerator, n_species));
+    DEBUG(PrintVector("fr_denominator", fr_denominator, n_species));
 
     /* The assimilation matrix will hold the + term of equation 2.18 for each 
        spp */
@@ -228,27 +231,24 @@ void YodzisInnesState(const int *n_species,     /* n species */
         dydt[j] = respiration[j] + assimilation_t[j] - consumption_t[j];
     }
 
-    if(debug)
-    {
-        PrintVector("growth", growth, n_species);
-        Rprintf("\n");
+    DEBUG(PrintVector("growth", growth, n_species));
+    DEBUG(Rprintf("\n"));
 
-        PrintVector("respiration", respiration, n_species);
-        Rprintf("\n");
+    DEBUG(PrintVector("respiration", respiration, n_species));
+    DEBUG(Rprintf("\n"));
 
-        PrintMatrix("consumption", consumption, n_species);
-        PrintVector("consumption_t (row sums)", consumption_t, n_species);
-        Rprintf("\n");
+    DEBUG(PrintMatrix("consumption", consumption, n_species));
+    DEBUG(PrintVector("consumption_t (row sums)", consumption_t, n_species));
+    DEBUG(Rprintf("\n"));
 
-        PrintMatrix("assimilation", assimilation, n_species);
-        PrintVector("assimilation_t (col sums)", assimilation_t, n_species);
-        Rprintf("\n");
+    DEBUG(PrintMatrix("assimilation", assimilation, n_species));
+    DEBUG(PrintVector("assimilation_t (col sums)", assimilation_t, n_species));
+    DEBUG(Rprintf("\n"));
 
-        PrintVector("dydt", dydt, n_species);
+    DEBUG(PrintVector("dydt", dydt, n_species));
 
-        Rprintf("*************************\n");
-        Rprintf("\n");
-    }
+    DEBUG(Rprintf("*************************\n"));
+    DEBUG(Rprintf("\n"));
 }
 
 void YodzisInnesFast(const int *neq,    /* n equations */ 
@@ -306,15 +306,13 @@ void YodzisInnesFast(const int *neq,    /* n equations */
                                   nout=params[['dll.nout']],
     */
 
-    static const int debug = 0;
+#ifdef DEBUG_MODEL
+    const int debug_print_one=1;  // Used only in debug
+#endif
 
-    if(debug)
-    {
-        Rprintf("*************************\n");
-        const int n=1;
-        PrintVector("t", t, &n);
-        PrintIntVector("neq", neq, &n);
-    }
+    DEBUG(Rprintf("*************************\n"));
+    DEBUG(PrintVector("t", t, &debug_print_one));
+    DEBUG(PrintIntVector("neq", neq, &debug_print_one));
 
     if(neq<0) error("Must have at least 1 population");
     const int n = *neq;
@@ -331,22 +329,15 @@ void YodzisInnesFast(const int *neq,    /* n equations */
     /* 5...(5 + n producers)      indices of producers */
     /* (5 + n producers)...(5 + n producers + n consumers) indices of 
                                                            consumers */
-    if(debug)
-    {
-        PrintIntVector("ip", ip, ip+2);
-    }
+    DEBUG(PrintIntVector("ip", ip, ip+2));
 
     if(ip[2]<5) error("Must have at least 5 integer parameters");
     const int *n_producers = ip + 3;
     const int *n_consumers = ip + 4;
 
-    if(debug)
-    {
-        const int n=1;
-        PrintIntVector("n_producers", n_producers, &n);
-        PrintIntVector("n_consumers", n_consumers, &n);
-    }
-
+    DEBUG(PrintIntVector("n_producers", n_producers, &debug_print_one));
+    DEBUG(PrintIntVector("n_consumers", n_consumers, &debug_print_one));
+ 
     if(ip[2]!=(5+*n_producers+*n_consumers))
     {
         error("Unexpected number of integer parameters");
@@ -372,13 +363,9 @@ void YodzisInnesFast(const int *neq,    /* n equations */
                          n*n +      /* e - matrix of nxn*/
                          n*n;       /* fe - matrix of nxn*/
 
-    if(debug)
-    {
-        const int n=1;
-        PrintIntVector("n_outputs", &n_outputs, &n);
-        PrintIntVector("n_params", &n_params, &n);
-        Rprintf("*************************\n");
-    }
+    DEBUG(PrintIntVector("n_outputs", &n_outputs, &debug_print_one));
+    DEBUG(PrintIntVector("n_params", &n_params, &debug_print_one));
+    DEBUG(Rprintf("*************************\n"));
 
     if(ip[0]!=n_outputs)
     {
@@ -390,11 +377,8 @@ void YodzisInnesFast(const int *neq,    /* n equations */
         error("Unexpected yout length");
     }
 
-    if(debug)
-    {
-        PrintVector("yout", yout, ip+1);
-        Rprintf("*************************\n");
-    }
+    DEBUG(PrintVector("yout", yout, ip+1));
+    DEBUG(Rprintf("*************************\n"));
 
     /* TASK 2 Extract double parameters from yout */
     double *growth=yout;                    /* Output vector of length n */
