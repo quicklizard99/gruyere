@@ -8,12 +8,12 @@ LVDyDt <- function(time, y, params)
     with(params, 
     {
         return (list(c(R=r * R * (K-R)/K - a * R * C, 
-                       C=e * e * R * C - d * C), 
+                       C=e * a * R * C - d * C), 
                      globals=NULL))
     })
 }
 
-params <- list(r = 1.5, a=0.1, e=0.1, d=0.05, K=100)
+params <- list(r = 1.5, a=0.15, e=0.05, d=0.05, K=100)
 
 simulation <- LSODASimulation(model=LVDyDt, 
                               params=params, 
@@ -26,9 +26,9 @@ collector <- CollectChunksVisitor()
 res <- RunSimulation(initial.state=c(R=100, C=5), 
                      simulation=simulation,
                      controller=MaxTimeController(200), 
-                     visitors=list(collector, TimeSimulationVisitor()))
+                     visitors=list(collector, ElapsedTimeVisitor()))
 
-# Equilibria derived by hand (See Mick's aie herbivory slides 89 and 94
+# Equilibria derived by hand
 Re <- with(params, d / (e * a) )
 Ce <- with(params, r * (K-Re) / (a * K))
 
