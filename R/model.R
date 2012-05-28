@@ -20,10 +20,10 @@ YodzisInnesDyDt <- function(time, B, params)
               params$consumers.c, params$n.consumers,
               params$rho, params$x, params$y, params$e, params$fe, B, 
               dydt=numeric(params$n.species), 
-              numeric(params$n.species), 
-              numeric(params$n.species), 
-              numeric(params$n.species*params$n.species), 
-              numeric(params$n.species*params$n.species), 
+              numeric(params$n.species), # growth
+              numeric(params$n.species), # respiration
+              numeric(params$n.species*params$n.species), # assimilation
+              numeric(params$n.species*params$n.species), # consumption
               NAOK=TRUE, DUP=FALSE)
 
     # We don't do anything with the last 4 output parameters - we are only 
