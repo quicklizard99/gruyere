@@ -40,7 +40,7 @@ options(SweaveHooks = list(fig=function() par(mgp=c(2.5,1,0),
 \section{Introduction}
 Gruyere is runs simulations of a multi-species dynamical model in the style 
 of \cite{YodzisAndInnes1992AmNat}. 
-This model is synthesis between allometric 
+This model is a synthesis between allometric 
 scaling and Lotka-Volterra-style dynamical models 
 (\citealp{YodzisAndInnes1992AmNat} expanded by \citealp{BroseEtAl2006EcolLett} 
 and \citep{WilliamsEtAl2007}. 
@@ -52,7 +52,7 @@ empirical data (e.g. \citealp{Peters1983} and
 This approach avoids the need to derive species- or population-specific 
 parameters, sacrificing some accuracy for generality and making it possible to 
 investigate the dynamics of complex communities. 
-Gruyere depends upon the Cheddar and deSolve  packages.
+Gruyere depends upon the Cheddar and deSolve packages.
 
 There a great deal of flexibility in how simulations are run, how extinctions 
 are handled, what data is collected, when simulations terminate and what you 
