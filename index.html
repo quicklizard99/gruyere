@@ -7,7 +7,16 @@
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+
     <script src="javascripts/scale.fix.js"></script>
+
+    <!-- Syntax highlighting -->
+    <script type="text/javascript" src="javascripts/shCore.js"></script>
+    <script type="text/javascript" src="javascripts/shBrushR.js"></script>
+    <link href="stylesheets/shCore.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/shCoreMidnight.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/shThemeMidnight.css" rel="stylesheet" type="text/css" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <meta name="description" content="Population dynamics in the style of Yodzis and Innes (1992) in R">
 
@@ -93,6 +102,12 @@
           Gruyere makes this commonly-used modelling approach available to 
           users of the <a href="http://www.r-project.org/">R</a> language.
         </p>
+
+        <p>A PDF vignette gets you started.</p>
+        <pre class="brush: R">
+          library(gruyere)
+          vignette('GruyereQuickstart')
+        </pre>
       </section>
 
       <section>
@@ -144,10 +159,15 @@
       </section>
     </div>
     <footer>
+      <p>R syntax highlighter by <a href="http://www.demitri.com/code/">Demitri Muna</a></p>
       <p>Project maintained by <a href="https://github.com/quicklizard99">quicklizard99</a></p>
       <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
     </footer>
     <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
-    
+
+    <script type="text/javascript">
+         SyntaxHighlighter.all()
+    </script>    
+
   </body>
 </html>
