@@ -7,11 +7,11 @@ RunSim <- function(model, params, max.time=1000, sampling.interval=0.1)
                                   extinction.threshold=1e-20)
 
     # Collect simulation results in memory
-    collector <- CollectChunksVisitor()
+    collector <- CollectChunksObserver()
     res <- RunSimulation(initial.state=Biomass(params$community), 
                          simulation=simulation,
                          controller=MaxTimeController(max.time=max.time), 
-                         visitors=list(collector))
+                         observers=list(collector))
 
     return (get('tseries', collector))
 }
@@ -77,7 +77,7 @@ TestGrowthModel <- function()
     stopifnot(isTRUE(all.equal(tseries1, tseries3)))
 }
 
-TestYodzisInnesModel <- function()
+TestYodzisInnesModelMotifs <- function()
 {
     # Ensures that the R and C model implementations both give the same time
     # series for a number of motifs.
@@ -182,7 +182,7 @@ TestYodzisInnesModel <- function()
     ThreeSpeciesChain <- function()
     {
         community <- Community(nodes=data.frame(node=c('R','C1','C2'), 
-                                            M=c(1,5,10), 
+                                            M=c(1,5,100), 
                                             N=c(200,20,1), 
                                             category=c('producer', 
                                                        rep('invertebrate', 2))),
@@ -196,7 +196,7 @@ TestYodzisInnesModel <- function()
         params <- IntermediateModelParams(community, spec)
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
-        # Link-specific devaitions that will be seen in equilibria
+        # Link-specific deviations that will be seen in equilibria
         params$B0['R','C1'] <- 5000
         params$fe['R','C1'] <- 0.6
 
@@ -241,7 +241,7 @@ TestYodzisInnesModel <- function()
         params <- IntermediateModelParams(community, spec)
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
-        # Link-specific devaitions that will be seen in equilibria
+        # Link-specific deviations that will be seen in equilibria
         params$B0['R','C1'] <- 5000
         params$B0['R','C2'] <- 500
         params$fe['R','C2'] <- 0.6
@@ -291,7 +291,7 @@ TestYodzisInnesModel <- function()
         params <- IntermediateModelParams(community, spec)
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
-        # Link-specific devaitions that will be seen in equilibria
+        # Link-specific deviations that will be seen in equilibria
         params$B0['R','C1'] <- 5000
         params$B0['R','C2'] <- 500
         params$fe['R','C2'] <- 0.6
@@ -335,7 +335,7 @@ TestYodzisInnesModel <- function()
         params <- IntermediateModelParams(community, spec)
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
-        # Link-specific devaitions that will be seen in equilibria
+        # Link-specific deviations that will be seen in equilibria
         params$B0['R1','C'] <- 1100
         params$B0['R2','C'] <- 900
         params$fe['R2','C'] <- 0.6
@@ -386,7 +386,7 @@ TestYodzisInnesModel <- function()
         params <- IntermediateModelParams(community, spec)
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
-        # Link-specific devaitions that will be seen in equilibria
+        # Link-specific deviations that will be seen in equilibria
         params$B0['R','C2'] <- 900
         params$fe['R','C2'] <- 0.9
 

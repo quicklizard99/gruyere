@@ -1,52 +1,52 @@
-# VisitStart is called by RunSimulation
-VisitStart <- function(self, initial.state)
+# SimStart is called by RunSimulation
+SimStart <- function(self, initial.state)
 {
-    UseMethod("VisitStart")
+    UseMethod("SimStart")
 }
 
-# VisitChunk is called by RunSimulation
-VisitChunk <- function(self, chunk)
+# SimChunk is called by RunSimulation
+SimChunk <- function(self, chunk)
 {
-    UseMethod("VisitChunk")
+    UseMethod("SimChunk")
 }
 
-# VisitEnd is called by RunSimulation
-VisitEnd <- function(self, time, final.state)
+# SimEnd is called by RunSimulation
+SimEnd <- function(self, time, final.state)
 {
-    UseMethod("VisitEnd")
+    UseMethod("SimEnd")
 }
 
 
-CurrentTimeVisitor <- function()
+CurrentTimeObserver <- function()
 {
     # Prints current time
     self <- new.env(hash=TRUE, parent=emptyenv())
-    class(self) <- c('CurrentTimeVisitor', class(self))
+    class(self) <- c('CurrentTimeObserver', class(self))
     return(self)
 }
 
-VisitStart.CurrentTimeVisitor <- function(self, initial.state)
+SimStart.CurrentTimeObserver <- function(self, initial.state)
 {
     cat('Simulation started\n')
 }
 
-VisitChunk.CurrentTimeVisitor <- function(self, chunk)
+SimChunk.CurrentTimeObserver <- function(self, chunk)
 {
     cat(paste('Simulation time', tail(chunk, 1)[1], '\n'))
 }
 
-VisitEnd.CurrentTimeVisitor <- function(self, time, final.state)
+SimEnd.CurrentTimeObserver <- function(self, time, final.state)
 {
     cat(paste('Simulation finished at time', time, '\n'))
 }
 
 
-ExtinctionsFeedbackVisitor <- function()
+ExtinctionsFeedbackObserver <- function()
 {
     # Prints information about extinctions
     self <- new.env(hash=TRUE, parent=emptyenv())
     assign('extinct', NULL, self)
-    class(self) <- c('ExtinctionsFeedbackVisitor', class(self))
+    class(self) <- c('ExtinctionsFeedbackObserver', class(self))
     return(self)
 }
 
@@ -68,50 +68,50 @@ ExtinctionsFeedbackVisitor <- function()
     }
 }
 
-VisitStart.ExtinctionsFeedbackVisitor <- function(self, initial.state)
+SimStart.ExtinctionsFeedbackObserver <- function(self, initial.state)
 {
     assign('extinct', rep(FALSE, length(initial.state)), self)
     .extinctions.feedback.worker(self, initial.state)
 }
 
-VisitChunk.ExtinctionsFeedbackVisitor <- function(self, chunk)
+SimChunk.ExtinctionsFeedbackObserver <- function(self, chunk)
 {
     current.state <- tail(chunk, 1)[,-1]
     .extinctions.feedback.worker(self, current.state)
 }
 
-VisitEnd.ExtinctionsFeedbackVisitor <- function(self, time, final.state)
+SimEnd.ExtinctionsFeedbackObserver <- function(self, time, final.state)
 {
     .extinctions.feedback.worker(self, final.state)
     cat(paste(sum(get('extinct', self)), 'extinctions\n'))
 }
 
 
-CollectChunksVisitor <- function()
+CollectChunksObserver <- function()
 {
     # Collects all simulation chunks into one matrix
     self <- new.env(hash=TRUE, parent=emptyenv())
     assign('tseries', NULL, self)
-    class(self) <- c('CollectChunksVisitor', class(self))
+    class(self) <- c('CollectChunksObserver', class(self))
     return(self)
 }
 
-VisitStart.CollectChunksVisitor <- function(self, initial.state)
+SimStart.CollectChunksObserver <- function(self, initial.state)
 {
-    # Colnames will be set in VisitChunk.CollectChunksVisitor?
+    # Colnames will be set in SimChunk.CollectChunksObserver?
     t <- matrix(c(0, initial.state), nrow=1)
     colnames(t) <- c('time', names(initial.state))
     assign('tseries', t, self)
 }
 
-VisitChunk.CollectChunksVisitor <- function(self, chunk)
+SimChunk.CollectChunksObserver <- function(self, chunk)
 {
     # Ignore the first row - it was recorded last time
     chunk <- tail(chunk, -1)
     assign('tseries', rbind(get('tseries', self), chunk), self)
 }
 
-VisitEnd.CollectChunksVisitor <- function(self, time, final.state)
+SimEnd.CollectChunksObserver <- function(self, time, final.state)
 {
     # Clear rownames
     m <- get('tseries', self)
@@ -125,15 +125,15 @@ GetTimeSeries <- function(self)
 }
 
 
-WriteChunksVisitor <- function(fname)
+WriteChunksObserver <- function(fname)
 {
     # Writes simulation chunks to disk
     self <- fname
-    class(self) <- c('WriteChunksVisitor', class(self))
+    class(self) <- c('WriteChunksObserver', class(self))
     return(self)
 }
 
-VisitStart.WriteChunksVisitor <- function(self, initial.state)
+SimStart.WriteChunksObserver <- function(self, initial.state)
 {
     x <- matrix(c(0, initial.state), nrow=1)
     colnames(x) <- c('time', names(initial.state))
@@ -141,33 +141,33 @@ VisitStart.WriteChunksVisitor <- function(self, initial.state)
                 sep=',')
 }
 
-VisitChunk.WriteChunksVisitor <- function(self, chunk)
+SimChunk.WriteChunksObserver <- function(self, chunk)
 {
     # Ignore the first row - it was written last time
     write.table(x=tail(chunk, -1), file=self, append=TRUE, row.names=FALSE, 
                 col.names=FALSE, sep=',')
 }
 
-VisitEnd.WriteChunksVisitor <- function(self, time, final.state)
+SimEnd.WriteChunksObserver <- function(self, time, final.state)
 {
 }
 
 
-TimeBetweenChunksVisitor <- function(fname)
+TimeBetweenChunksObserver <- function(fname)
 {
     # Prints the time between chunks
     self <- new.env(hash=TRUE, parent=emptyenv())
     assign('time', NULL, self)
-    class(self) <- c('TimeBetweenChunksVisitor', class(self))
+    class(self) <- c('TimeBetweenChunksObserver', class(self))
     return(self)
 }
 
-VisitStart.TimeBetweenChunksVisitor <- function(self, initial.state)
+SimStart.TimeBetweenChunksObserver <- function(self, initial.state)
 {
     assign('time', proc.time()['elapsed'], self)
 }
 
-VisitChunk.TimeBetweenChunksVisitor <- function(self, chunk)
+SimChunk.TimeBetweenChunksObserver <- function(self, chunk)
 {
     was <- get('time', self)
     now <- proc.time()['elapsed']
@@ -175,28 +175,28 @@ VisitChunk.TimeBetweenChunksVisitor <- function(self, chunk)
     assign('time', now, self)
 }
 
-VisitEnd.TimeBetweenChunksVisitor <- function(self, time, final.state)
+SimEnd.TimeBetweenChunksObserver <- function(self, time, final.state)
 {
 }
 
 
-PlotNDeviationsVisitor <- function(community, ...)
+PlotNDeviationsObserver <- function(community, ...)
 {
     self <- list(community=community, plot.params=list(...))
-    class(self) <- c('PlotNDeviationsVisitor', class(self))
+    class(self) <- c('PlotNDeviationsObserver', class(self))
     return(self)
 }
 
-VisitStart.PlotNDeviationsVisitor <- function(self, initial.state)
+SimStart.PlotNDeviationsObserver <- function(self, initial.state)
 {
     M <- NP(self$community,'M')
-    do.call('PlotNDeviationsVisitor', c(list(community=self$community, 
+    do.call('PlotNDeviationsObserver', c(list(community=self$community, 
                                              N.now=initial.state/M,
                                              main="time=0"), 
                                              self$plot.params))
 }
 
-VisitChunk.PlotNDeviationsVisitor <- function(self, chunk)
+SimChunk.PlotNDeviationsObserver <- function(self, chunk)
 {
     time <- tail(chunk, 1)[1]
     current.state <- tail(chunk, 1)[2:ncol(chunk)]
@@ -207,7 +207,7 @@ VisitChunk.PlotNDeviationsVisitor <- function(self, chunk)
                                       self$plot.params))
 }
 
-VisitEnd.PlotNDeviationsVisitor <- function(self, time, final.state)
+SimEnd.PlotNDeviationsObserver <- function(self, time, final.state)
 {
     M <- NP(self$community,'M')
     do.call('PlotNDeviations', c(list(community=self$community, 
@@ -217,24 +217,24 @@ VisitEnd.PlotNDeviationsVisitor <- function(self, time, final.state)
 }
 
 
-PlotBvTVisitor <- function(community, ...)
+PlotBvTObserver <- function(community, ...)
 {
-    # Inherits from CollectChunksVisitor
-    self <- CollectChunksVisitor()
+    # Inherits from CollectChunksObserver
+    self <- CollectChunksObserver()
 
     assign('community', community, self)
     assign('plot.params', list(...), self)
 
-    class(self) <- c('PlotBvTVisitor', class(self))
+    class(self) <- c('PlotBvTObserver', class(self))
     return(self)
 }
 
-VisitStart.PlotBvTVisitor <- function(self, initial.state)
+SimStart.PlotBvTObserver <- function(self, initial.state)
 {
     NextMethod()
 }
 
-VisitChunk.PlotBvTVisitor <- function(self, chunk)
+SimChunk.PlotBvTObserver <- function(self, chunk)
 {
     NextMethod()
     time <- tail(chunk, 1)[1]
@@ -244,7 +244,7 @@ VisitChunk.PlotBvTVisitor <- function(self, chunk)
                               get('plot.params', self)))
 }
 
-VisitEnd.PlotBvTVisitor <- function(self, time, final.state)
+SimEnd.PlotBvTObserver <- function(self, time, final.state)
 {
     NextMethod()
     do.call('PlotBvT', c(list(community=get('community', self), 
@@ -254,24 +254,24 @@ VisitEnd.PlotBvTVisitor <- function(self, time, final.state)
 }
 
 
-ElapsedTimeVisitor <- function()
+ElapsedTimeObserver <- function()
 {
-    # Inherits from CollectChunksVisitor
+    # Inherits from CollectChunksObserver
     self <- new.env(hash=TRUE, parent=emptyenv())
-    class(self) <- c('ElapsedTimeVisitor', class(self))
+    class(self) <- c('ElapsedTimeObserver', class(self))
     return(self)
 }
 
-VisitStart.ElapsedTimeVisitor <- function(self, initial.state)
+SimStart.ElapsedTimeObserver <- function(self, initial.state)
 {
     assign('start', proc.time(), self)
 }
 
-VisitChunk.ElapsedTimeVisitor <- function(self, chunk)
+SimChunk.ElapsedTimeObserver <- function(self, chunk)
 {
 }
 
-VisitEnd.ElapsedTimeVisitor <- function(self, time, final.state)
+SimEnd.ElapsedTimeObserver <- function(self, time, final.state)
 {
     end <- proc.time()
     print('Simulation time:')

@@ -1,3 +1,3 @@
-lv                   Lotka-Volterra model of a resource-consumer system
-resource.consumer    Yodzis and Innes (1992)-style model of a resource-consumer system
-
+lv                   Shows how to use Cheddar to simulate dynamics of a Lotka-Volterra model of a resource-consumer system
+resource.consumer    A simulation of a resource-consumer system using the Yodzis and Innes (1992) model 
+trophic.cascade      Demonstrates a trophic cascade using the Yodzis and Innes (1992)-style model. Simulations of a single producer, resource-consumer and three-species chain are run.

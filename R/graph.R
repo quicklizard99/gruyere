@@ -131,6 +131,7 @@ PlotBDeviations <- function(community, B.now,
                      col, lty, divide.Y.by.M, plot.species.labels, 
                      cex=1, ...)
 {
+    # TODO colour.spec scheme as used by cheddar
     # A private helper that plot timeseries values against time
     # If divide.Y.by.M is TRUE, the tseries data are divided by community$M 
     # before plotting. Only the subset of tseries to be plotted is divided 
@@ -139,18 +140,18 @@ PlotBDeviations <- function(community, B.now,
 
     if(!is.null(from.time))
     {
-        from <- which(tseries[,1]==from.time)
+        from <- which(tseries[,1,drop=FALSE]==from.time)
     }
 
     if(!is.null(to.time))
     {
-        to <- which(tseries[,1]==to.time)
+        to <- which(tseries[,1,drop=FALSE]==to.time)
     }
 
     stopifnot(all.equal(1, length(to), length(from)))
 
-    time <- tseries[from:to,1]
-    tseries <- tseries[from:to,-1]
+    time <- tseries[from:to,1,drop=FALSE]
+    tseries <- tseries[from:to,-1,drop=FALSE]
 
     if(divide.Y.by.M)
     {
@@ -159,7 +160,21 @@ PlotBDeviations <- function(community, B.now,
     y <- sapply(unique(category), 
                 function(c) apply(tseries[,category==c,drop=FALSE], 1, sum))
     colnames(y) <- unique(category)
-    if(!is.null(names(col)))
+
+    if(missing(col))
+    {
+        default <- DefaultCategoryColours()
+        if(all(colnames(y) %in% names(default)))
+        {
+            col <- default[colnames(y)]
+        }
+        else
+        {
+            col <- 1
+        }
+    }
+
+    if(FALSE && !is.null(names(col)))
     {
         col <- col[colnames(y)]
     }
@@ -226,8 +241,8 @@ PlotNvT <- function(community, tseries,
           main=CPS(community)$title, 
           xlab="time (t')", xlim=NULL, 
           ylab=Log10NLabel(community), ylim=NULL, 
-          col=DefaultCategoryColours(), 
-          show.legend=length(col)<5, 
+          col, 
+          show.legend=FALSE, 
           lty=1, ...)
 {
     .PlotYvT(community, 
@@ -247,8 +262,8 @@ PlotBvT <- function(community, tseries,
           main=CPS(community)$title, 
           xlab="time (t')", xlim=NULL, 
           ylab=Log10BLabel(community), ylim=NULL, 
-          col=DefaultCategoryColours(), 
-          show.legend=length(col)<5, 
+          col, 
+          show.legend=FALSE, 
           lty=1, ...)
 {
     .PlotYvT(community, 

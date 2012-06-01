@@ -341,25 +341,25 @@ simulations when a time limit is reached.
 controller <- MaxTimeController(100)
 @
 
-\subsection{Visitors}
-Zero or more visitor objects are shown time series chunks of the simulation as 
-it is run. A visitor could potentially do anything with a chunk of the time 
-series. There are a few visitors that give textual feedback and some that gives 
-graphical feedback. This example uses TimeSimulationVisitor(), which prints 
-the time elapsed once the simulation completes. There are also visitors for 
-recording the time series chunks. CollectChunksVisitor(), which we use here, 
-records all the chunks in memory. Another visitor, WriteChunksVisitor(), 
+\subsection{Observers}
+Zero or more observer objects are shown time series chunks of the simulation as 
+it is run. An observer could potentially do anything with a chunk of the time 
+series. Some observers that give textual feedback and some that gives 
+graphical feedback. This example uses TimeSimulationObserver(), which prints 
+the time elapsed once the simulation completes. There are also observers for 
+recording the time series chunks. CollectChunksObserver(), which we use here, 
+records all the chunks in memory. Another observer, WriteChunksObserver(), 
 writes each chunk of the time series to a file. 
 <<>>=
-collector <- CollectChunksVisitor() # Collect simulation results in memory
-visitors <- list(collector, ElapsedTimeVisitor())
+collector <- CollectChunksObserver() # Collect simulation results in memory
+observers <- list(collector, ElapsedTimeObserver())
 @
 
 \subsection{RunSimulation}
 This function glues everything together. It evolves the system as follows:
 \begin{enumerate}
   \item request the next chunk from the simulation object
-  \item show the chunk to each of  the visitors
+  \item show the chunk to each of  the observers
   \item show the chunk to the controller
   \item terminate the simulation if the controller says so, else go back to 
         step 1
@@ -370,12 +370,12 @@ This function glues everything together. It evolves the system as follows:
 res <- RunSimulation(initial.state=Biomass(community), 
                      simulation=simulation,
                      controller=controller, 
-                     visitors=visitors)
+                     observers=observers)
 @
 
 res holds the final simulation time and final biomasses for each species.
-\subsection{Visitors and results}
-We can use the time series assembled by the CollectChunksVisitor() object. 
+\subsection{Observers and results}
+We can use the time series assembled by the CollectChunksObserver() object. 
 GetTimeSeries() returns the time series matrix. The first column is time, 
 columns 2 and 3 are biomasses of the resource and consumer respectively.
 <<>>=
@@ -421,10 +421,9 @@ mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
 %Parameters
 %Controller
 %Simulation
-%Visitors
+%Observers
 %Recreate some results from previous research
-
-%Artificial 
+%Artificial communities - structural models
 
 \bibliographystyle{plainnat}
 \bibliography{gruyere}

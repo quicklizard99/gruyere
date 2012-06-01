@@ -58,10 +58,10 @@ YodzisInnes92FConstants <- function()
                  fJ=c(invertebrate=0.3, vert.ecto=0.2, vert.endo=1)))
 }
 
-AllFValuesEqual <- function()
+AllFValuesEqual <- function(v=1)
 {
     warning("The new name for this function is 'AllFConstantsEqual'")
-    return (AllFConstantsEqual())
+    return (AllFConstantsEqual(v=v))
 }
 
 AllFConstantsEqual <- function(v=1)

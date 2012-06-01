@@ -24,13 +24,13 @@ simulation <- LSODASimulation(model=YodzisInnesDyDt,
 
 controller <- MaxTimeController(200)
 
-collector <- CollectChunksVisitor() # Collect simulation results in memory
-visitors <- list(collector, ElapsedTimeVisitor())
+collector <- CollectChunksObserver() # Collect simulation results in memory
+observers <- list(collector, ElapsedTimeObserver())
 
 res <- RunSimulation(initial.state=Biomass(community), 
                      simulation=simulation,
                      controller=controller, 
-                     visitors=visitors)
+                     observers=observers)
 
 tseries <- GetTimeSeries(collector)
 head(tseries)

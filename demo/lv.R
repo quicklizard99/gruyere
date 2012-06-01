@@ -1,5 +1,5 @@
 # Lotka-Volterra
-# Demonstrates LSODASimulation(), RunSimulation() and visitors
+# Demonstrates LSODASimulation(), RunSimulation() and observers
 LVDyDt <- function(time, y, params)
 {
     R <- y[1]
@@ -21,12 +21,12 @@ simulation <- LSODASimulation(model=LVDyDt,
                               use.atol=FALSE)
 
 # Collect simulation results in memory
-collector <- CollectChunksVisitor()
+collector <- CollectChunksObserver()
 
 res <- RunSimulation(initial.state=c(R=100, C=5), 
                      simulation=simulation,
                      controller=MaxTimeController(200), 
-                     visitors=list(collector, ElapsedTimeVisitor()))
+                     observers=list(collector, ElapsedTimeObserver()))
 
 # Equilibria derived by hand
 Re <- with(params, d / (e * a) )
