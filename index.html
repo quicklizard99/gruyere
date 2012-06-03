@@ -24,46 +24,32 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
   </head>
+
   <body>
-    <div class="wrapper">
+    <div id="content">
       <header>
         <h1>Gruyere</h1>
         <p>Population dynamics in the style of Yodzis &amp; Innes (1992) in R</p>
-        <p class="view"><a href="https://github.com/quicklizard99/gruyere">View the Project on GitHub <small>quicklizard99/gruyere</small></a></p>
-        <ul>
-<!--          <li><a href="https://github.com/quicklizard99/gruyere/zipball/master">Download <strong>ZIP File</strong></a></li>-->
-<!--          <li><a href="https://github.com/quicklizard99/gruyere/tarball/master">Download <strong>TAR Ball</strong></a></li>-->
-          <li><a href="https://github.com/quicklizard99/gruyere">View On <strong>GitHub</strong></a></li>
+
+        <ul id="downloads">
+          <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-8.zip"><strong>Windows</strong> 0.1-8</a></li>
+          <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-8.tgz"><strong>Mac</strong> 0.1-8</a></li>
+          <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-8.tar.gz"><strong>Source</strong> 0.1-8</a></li>
+        </ul>
+
+        <ul id="github">
+<!--          <li><a href="https://github.com/quicklizard99/cheddar/zipball/master">Download <strong>ZIP File</strong></a></li>-->
+<!--          <li><a href="https://github.com/quicklizard99/cheddar/tarball/master">Download <strong>TAR Ball</strong></a></li>-->
+          <li class="single"><a href="https://github.com/quicklizard99/gruyere">View on <strong>GitHub</strong></a></li>
         </ul>
       </header>
 
       <section>
-        <h2>Releases</h2>
-        <p>You can download the current release (0.1-8) of Gruyere for your system and install it in the usual way. 
-
-        <ul>
-        <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-8.zip">Windows</a> (32- and 64-bit)
-        <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-8.tgz">Mac</a> (32- and 64-bit Intel and 32-bit PPC)
-        <li><a href="https://github.com/downloads/quicklizard99/gruyere/gruyere_0.1-8.tar.gz">Source</a> (If you use Linux or Unix)
-        </ul>
-
-        <p>
-          Gruyere is in development. It contains unit tests but does not yet contain help or vignettes. 
-          Please give it a go and send questions, comments or other feedback to me 
-          (lawrence.hudson08 (at) imperial.ac.uk), 
-          or use the <a href="https://github.com/quicklizard99/gruyere-/issues">issue tracker</a>. 
-          Stable releases will be submitted to <a href="http://cran.r-project.org/">CRAN</a>.
-        </p>
-      </section>
-
-      <section>
-        <h3>Overview</h3>
+        <h2>Overview</h2>
         <p>
           Gruyere is an <a href="http://www.r-project.org//">R</a> package for 
           running simulations of a multi-species dynamical model in the style 
           of <a href="#YodzisAndInnes1992AmNat">Yodzis &amp; Innes (1992)</a>. 
-          This package depends upon <a href="http://quicklizard99.github.com/cheddar/">Cheddar</a> and 
-          <a href="http://cran.r-project.org/web/packages/deSolve/index.html">deSolve</a>.
         </p>
 
         <p>
@@ -76,7 +62,7 @@
            <a href="#WilliamsEtAl2007">Williams et al, 2007</a>). 
           Differential equations model the flow of energy between species. 
           Rates of growth, ingestion and respiration are computed from 
-          inter-specific 'rate &prop; body mass<sup>b</sup>' relationships 
+          inter-specific 'rate = a M<sup>b</sup>' relationships 
           observed in empirical data (e.g. 
           <a href="#Peters1983">Peters, 1983</a> and 
           <a href="#SavageEtAl2004FunctEcol">Savage et al, 2004</a>). 
@@ -101,9 +87,28 @@
         <p>
           Gruyere makes this commonly-used modelling approach available to 
           users of the <a href="http://www.r-project.org/">R</a> language.
+          It depends upon <a href="http://quicklizard99.github.com/cheddar/">Cheddar</a> and 
+          <a href="http://cran.r-project.org/web/packages/deSolve/index.html">deSolve</a>.
         </p>
 
-        <p>A PDF vignette gets you started.</p>
+        <p>
+          Gruyere contains unit tests but lacks help files and comprehensive vignettes. Please give it a go and send questions, comments or other feedback to me (lawrence.hudson08 (at) imperial.ac.uk), or use the <a href="https://github.com/quicklizard99/gruyere/issues">issue tracker</a>. Stable releases will be submitted to <a href="http://cran.r-project.org/">CRAN</a>.
+        </p>
+
+      </section>
+
+      <section>
+        <h2>How do I get started?</h2>
+
+        <p>
+          Download the appropriate file for your system from the blue box at 
+          the top of the page and install it in the usual way. You will need 
+          to install <a href="http://quicklizard99.github.com/cheddar/">Cheddar</a> 
+          and <a href="http://cran.r-project.org/web/packages/deSolve/index.html">deSolve</a> 
+          before Gruyere.
+        </p>
+
+        <p>Gruyere does not yet have a comprehensive set of PDF vignettes but the GruyereQuickstart vignette will help you get going.</p>
         <pre class="brush: R">
           library(gruyere)
           vignette('GruyereQuickstart')
@@ -111,7 +116,7 @@
       </section>
 
       <section>
-        <h3>Video</h3>
+        <h2>Video</h2>
         <p>
            The short video below was created using R, Gruyere and Cheddar. 
            It shows two dynamical model simulations of the dataset from 
@@ -137,11 +142,11 @@
             model-data agreement.
         </p>
 
-        <iframe width="560" height="315" src="http://www.youtube.com/embed/dXw8qVMGbsE" frameborder="0" allowfullscreen></iframe>
+        <iframe width="720" height="405" src="http://www.youtube.com/embed/dXw8qVMGbsE" frameborder="0" allowfullscreen></iframe>
       </section>
 
       <section>
-        <h3>References</h3>
+        <h2>References</h2>
         <ul>
         <li id="BerlowEtAl2009PNAS">Berlow, E., Dunne, J., Martinez, N., Stark, P., Williams, R. & Brose, U. (2009) Simple prediction of interaction strengths in complex food webs. <span style="font-style: italic">Proceedings of the National Academy of Sciences</span>, 106 (1), 187-191. <a href="http://dx.doi.org/10.1073/pnas.0806823106">doi:10.1073/pnas.0806823106</a>.</li>
         <li id="BroseEtAl2006EcolLett">Brose, U, Williams, R, & Martinez, N. (2006) Allometric scaling enhances stability in complex food webs. <span style="font-style: italic">Ecology Letters</span> 9, 1228-1236. <a href="http://dx.doi.org/10.1111/j.1461-0248.2006.00978.x">doi:10.1111/j.1461-0248.2006.00978.x</a>.</li>
@@ -157,13 +162,16 @@
         <li id="YodzisAndInnes1992AmNat">Yodzis, P. & Innes, S. (1992) Body size and resource-consumer dynamics. <span style="font-style: italic">The American Naturalist</span>, 139 (6), 1151-1175. <a href="http://dx.doi.org/10.1086/285380">doi:10.1086/285380</a>.</li>
         </ul>
       </section>
-    </div>
-    <footer>
-      <p>R syntax highlighter by <a href="http://www.demitri.com/code/">Demitri Muna</a></p>
-      <p>Project maintained by <a href="https://github.com/quicklizard99">quicklizard99</a></p>
-      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
-    </footer>
-    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+
+      <footer>
+        <p>Project maintained by <a href="https://github.com/quicklizard99">quicklizard99</a></p>
+        <p>Hosted on GitHub Pages &mdash; Based on a theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+        <p>R syntax highlighter by <a href="http://www.demitri.com/code/">Demitri Muna</a></p>
+      </footer>
+
+      <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+
+    </div>  <!-- content-->
 
     <script type="text/javascript">
          SyntaxHighlighter.all()
