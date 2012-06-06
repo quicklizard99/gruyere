@@ -319,7 +319,7 @@ PlotFluxBars <- function(community, flux, time, ylim=NULL,
     plot(0, 0, xlim=c(0, NumberOfNodes(community)), ylim=ylim, ylab=ylab, 
          type='n', main=paste('Flux at', flux$time[time]))
 
-    producers <- Producers(community)
+    producers <- NodeNameIndices(community, Producers(community))
     segments(producers-1, growth[producers], producers, 
              growth[producers], col=col['growth'])
 
@@ -327,7 +327,7 @@ PlotFluxBars <- function(community, flux, time, ylim=NULL,
              1:NumberOfNodes(community), total.consumption, 
              col=col['consumption'])
 
-    consumers <- Consumers(community)
+    consumers <- NodeNameIndices(community, Consumers(community))
     segments(consumers-1, respiration[consumers], consumers, 
              respiration[consumers], col=col['respiration'])
 
@@ -338,14 +338,14 @@ PlotFluxBars <- function(community, flux, time, ylim=NULL,
 PlotFlux <- function(community, flux, species, xlab="time (t')", lty=1, 
                      col=c(growth='green3', respiration='purple3', 
                                   consumption='blue3', assimilation='red3'), 
-                     plot.log10=FALSE)
+                     plot.log10=FALSE, ylim, ...)
 {
     # Plots absolute flux for a single species
     species <- cheddar:::.ResolveToNodeIndices(community, species)
 
     stopifnot(1==length(species))
 
-    if(FALSE)
+    if(TRUE)
     {
         flux$respiration <- -flux$respiration
         flux$consumption <- -flux$consumption
@@ -390,74 +390,81 @@ PlotFlux <- function(community, flux, species, xlab="time (t')", lty=1,
         total <- flux$total[,species]
     }
 
+    if(missing(ylim))
+    {
+        ylim <- range(c(growth, respiration, consumption, total.consumption, 
+                        assimilation, total.assimilation, total), na.rm=TRUE)
+    }
+
+    plot(0, 0, xlim=c(flux$time[1], tail(flux$time,1)), ylim=ylim, type="n", 
+         xlab="time (t')", ylab=ylab, 
+         main=paste("Absolute biomass fluxes for ", 
+                    NP(community, 'node')[species], ' [', species, ']', sep=''), 
+         ...)
+
+    if(!plot.log10)
+    {
+        # A zero flux line
+        abline(h=0, col="grey")
+    }
+
     .PlotFluxLines(community, species, flux$time, growth, respiration, 
                    consumption, total.consumption, assimilation, 
-                   total.assimilation, total, col, lty, ylab)
+                   total.assimilation, total, col, lty, ylim, ylab, ...)
     .PlotFluxLabels(community, species, flux$time, growth, respiration, 
                     consumption, total.consumption, assimilation, 
-                    total.assimilation, col, lty)
+                    total.assimilation, col)
 }
 
 .PlotFluxLines <- function(community, species, time, growth, respiration, 
                            consumption, total.consumption, assimilation, 
-                           total.assimilation, total, col, lty, ylab)
+                           total.assimilation, total, col, lty, ylim, ylab, ...)
 {
     # na.rm=TRUE because some entries will be NA, e.g. respiration for a 
     # producer
-    ylim <- range(c(growth, respiration, consumption, total.consumption, 
-                    assimilation, total.assimilation, total), na.rm=TRUE)
-
-    plot(0, 0, xlim=c(time[1], tail(time,1)), ylim=ylim, type="n", 
-         xlab="time (t')", ylab=ylab, 
-         main=paste("Absolute biomass fluxes for ", 
-                    NP(community, 'node')[species], ' [', species, ']', sep=''))
-
-    # A zero flux line
-    abline(h=0, col="grey")
 
     # Need to be careful here because species might not have consumers
     # and consumers might not have any resource species
     if(IsProducer(community)[species])
     {
-        lines(time, growth, col=col['growth'], lty=lty)
+        lines(time, growth, col=col['growth'], lty=lty, ...)
     }
     else if(IsConsumer(community)[species])
     {
-        lines(time, respiration, col=col['respiration'], lty=lty)
+        lines(time, respiration, col=col['respiration'], ...)
         resources <- ResourcesByNode(community)[[species]]
         if(length(resources)>0)
         {
             matlines(time, assimilation[,resources], col=col['assimilation'], 
-                     lty=lty)
+                     lty=lty, ...)
             if(length(resources)>1)
             {
                 lines(time, total.assimilation, col=col['assimilation'], 
-                      lty=lty)
+                      lty=lty, ...)
             }
         }
     }
-
     consumers <- ConsumersByNode(community)[[species]]
     if(length(consumers)>0)
     {
-        matlines(time, consumption[,consumers], 
-                 col=col['consumption'], lty=lty)
+        matlines(time, consumption[,consumers], col=col['consumption'], 
+                 lty=lty, ...)
         if(length(consumers)>1)
         {
             lines(time, total.consumption, col=col['consumption'], 
-                  lty=lty)
+                  lty=lty, ...)
         }
     }
 
     if(!is.null(total))
     {
-        lines(time, total)
+        lines(time, total, lty=lty, ...)
     }
 }
 
 .PlotFluxLabels <- function(community, species, time, growth, respiration, 
                             consumption, total.consumption, assimilation, 
-                            total.assimilation, col, lty)
+                            total.assimilation, col)
 {
     # Place labels next to each flux line
     # Labels are positioned either at left or right of each trace 

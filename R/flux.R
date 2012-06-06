@@ -6,7 +6,7 @@ CalculateFlux <- function(community, tseries, flux.fn, flux.fn.params,
     # values for the given time range. tseries should be a time series of 
     # biomass abundances.
     stopifnot(ncol(tseries)==1+NumberOfNodes(community))
-    stopifnot(all(colnames(tseries)==c('time', community$species)))
+    stopifnot(all(colnames(tseries)==c('time', NP(community, 'node'))))
     if(!is.null(from.time))
     {
         from <- which(tseries[,1]==from.time)
@@ -45,16 +45,12 @@ CalculateFlux <- function(community, tseries, flux.fn, flux.fn.params,
     # Total flux per species
     total <- matrix(NA, nrow=length(time), ncol=n.species)
 
-    if(FALSE)
-    {
-        # Is this sensible?
-        colnames(growth) <- colnames(respiration) <- 
-            colnames(total.consumption) <- colnames(total.assimilation) <- 
-            community$species
-        colnames(consumption) <- colnames(assimilation) <- 
-            with(community, paste(rep(species, each=length(species)), species, 
-                                  sep='-'))
-    }
+    node <- unname(NP(community, 'node'))
+    colnames(growth) <- colnames(respiration) <- 
+        colnames(total) <- 
+        colnames(total.consumption) <- colnames(total.assimilation) <- 
+        node
+    dimnames(consumption) <- dimnames(assimilation) <- list(NULL, node, node)
 
     for(index in 1:length(time))
     {
