@@ -86,7 +86,7 @@ RunMySimulation(spec, rc)
 # 3. Three-species chain motif
 three.species <- Community(nodes=data.frame(node=c('R','C','P'), 
                                             M=c(1,5,500), 
-                                            N=c(20,1,1), 
+                                            N=c(20,1,0.1), 
                                             category=c('producer', 
                                                        rep('invertebrate', 2))),
                            trophic.links=data.frame(resource=c('R', 'C'), 
