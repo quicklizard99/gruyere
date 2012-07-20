@@ -9,10 +9,7 @@ TestYodzisInnesModelBestTL84 <- function()
 
     data(TL84)
 
-    # Take out isolated species
     community <- RemoveIsolatedNodes(TL84)
-
-    # MODEL PARAMETERS
 
     # The best set of parameters found by the optimizer
     best <- c(fr.producer=0.597603718793107, 
@@ -20,11 +17,9 @@ TestYodzisInnesModelBestTL84 <- function()
               fJ.vert.ecto=0.746630200690507, 
               d=1.17927240328204, 
               q=2.97244534827081, 
-              B0=0.000159780748387173, 
+              W=0.000159780748387173, 
               K=0.0337832616127192)
 
-    # Three steps to assembling model parameters
-    #   1) Parameters specification
     params.spec <- ModelParamsSpec(a.constants=YodzisInnes92AConstants(),
                                    f.constants=AllFConstantsEqual(), 
                                    e.producer=0.5, 
@@ -33,74 +28,62 @@ TestYodzisInnesModelBestTL84 <- function()
                                             # typical of gape-feeders
                                    a=1)     # Producer competition
 
-    # Use the best parameters
     params.spec[names(best)] <- best
-
-    #   2) Intermediate params
-    #      Williams et al 2007, eqs 2.8 - 2.12
-    #      Allows you to make per-species changes
     params <- IntermediateModelParams(community, params.spec)
-
-    #   3) Model params normalised to the growth rate of the primary producer 
-    #      with the smallest body mass
-    #      Williams et al 2007, eqs 2.14 - 2.18
-    #      What the model functions use - x, y, rho etc
     params <- BuildModelParams(community, params)
 
-
-    # CREATE THE OBJECTS THAT RUN THE SIMULATION
-
-    # The controller object decides when the simulation ends. 
-    # RunningAverageController() terminates simulations when either 
-        #   a) the running averages over means.to.keep change by less than 
-        #      equilibrium.fraction
-        #   b) the values within the current chunk change by less than 
-        #      equilibrium.fraction
-    controller <- RunningAverageController(community, 
+    RunSimWithModel <- function(model)
+    {
+        controller <- RunningAverageController(community, 
                                            equilibrium.fraction=0.01, 
                                            time.limit=1000000000, 
                                            means.to.keep=10, 
                                            burn.in.time=1000, 
                                            print.debug.msgs=FALSE)
 
-    # LSODASimulation() runs a differential equation model, solved using, 
-    # lsoda()which is provided by the deSolve package.
-    # Per-species extinction threshold are the biomass density of one 
-    # individual per volume of water in Tuesday Lake (83337 m^3)
-    simulation <- LSODASimulation(model=YodzisInnesDyDt, 
+        # Per-species extinction threshold are the biomass density of one 
+        # individual per volume of water in Tuesday Lake (83337 m^3)
+        simulation <- LSODASimulation(model=model, 
                                   params=params, 
                                   sampling.interval=1, 
                                   chunk.time=100,
                                   extinction.threshold=NP(community, 'M')/83337,
                                   print.debug.msgs=FALSE)
+    
+        collector <- CollectChunksObserver()
+        observers <- list(collector)
 
-    # observers is a list of observers that are shown the simulation as it runs. 
-    # Cheddar contains several and users can write their own. 
-    collector <- CollectChunksObserver()
-    observers <- list(collector)
+        res <- RunSimulation(initial.state=Biomass(community),
+                             simulation=simulation,
+                             controller=controller, 
+                             observers=observers)
 
-    # Start simulation at the empirical biomass densities
-    res <- RunSimulation(initial.state=Biomass(community),
-                         simulation=simulation,
-                         controller=controller, 
-                         observers=observers)
+        stopifnot(all.equal(unname(res$final.state), 
+                        c(6.324702e-05,7.335908e-05,5.065245e-05,5.320044e-05,
+                          4.996170e-05,6.659788e-05,1.117226e-04,5.974146e-05,
+                          7.357275e-05,5.831480e-05,6.778327e-05,5.717585e-05,
+                          4.602739e-05,9.527862e-05,8.500467e-05,7.382404e-05,
+                          4.843098e-05,8.481479e-05,6.240739e-05,5.299807e-05,
+                          8.917368e-05,5.943967e-05,4.942115e-05,8.233726e-05,
+                          5.128871e-05,1.661020e-06,4.855112e-06,1.142715e-04,
+                          6.432128e-05,3.908659e-05,1.439603e-04,1.718612e-04,
+                          3.796918e-07,5.660368e-05,3.705669e-06,2.363699e-04,
+                          3.692404e-06,3.034923e-06,4.603726e-08,7.611646e-05,
+                          5.710653e-05,4.215358e-06,5.515687e-06,5.312567e-06,
+                          5.522161e-06,4.284370e-05,1.744401e-04,3.434426e-04,
+                          3.392212e-04,3.544342e-04), tolerance=1e-4))
 
-    # res is a list
-    stopifnot(c("terminate", "chunk.equilibrium", "means.equilibrium", 
-                "time", "final.state") == names(res))
-    stopifnot(4400==res$time)
-    stopifnot(res$chunk.equilibrium)
-    stopifnot(!res$means.equilibrium)
+        stopifnot(c("terminate", "chunk.equilibrium", "means.equilibrium", 
+                    "time", "final.state") == names(res))
+        stopifnot(4400==res$time)
+        stopifnot(res$chunk.equilibrium)
+        stopifnot(!res$means.equilibrium)
+        return (GetTimeSeries(collector))
+    }
 
-    # res$final.state contains biomass abundances at the end of the simulation
-    # Convert these into population densities
-    N.final <- res$final.state / NP(community, 'M')
-
-    # Compute model-data agreement values
-    stopifnot(all.equal(27.26297023896913529484, 
-                        SSEModel(NP(community, 'N'), N.final)))
-    stopifnot(all.equal(50.03538198538740999766, 
-                        ModelScore(NP(community, 'N'), N.final)))
+    a <- RunSimWithModel(YodzisInnesDyDt)
+    b <- RunSimWithModel(YodzisInnesDyDt_R)
+    stopifnot(all.equal(a, b))
 }
 
 TestTrophicCascade <- function()
@@ -141,7 +124,7 @@ TestTrophicCascade <- function()
 
 
     # The same model parameters specification is used by all three simulations
-    spec <- ModelParamsSpec(f.constants=AllFConstantsEqual(0.1), K=100, B0=0.5, 
+    spec <- ModelParamsSpec(f.constants=AllFConstantsEqual(0.1), K=100, W=0.5, 
                             q=0.2)
 
 

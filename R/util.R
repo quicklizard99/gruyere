@@ -2,7 +2,6 @@
 LoadMatrix <- function(path)
 {
     # Returns a matrix 
-    # One column for time and then one per species
     # check.names is FALSE in order to preserve spaces in column names
     names <- colnames(read.csv(path, nrows=1, check.names=FALSE))
 
@@ -14,7 +13,7 @@ LoadMatrix <- function(path)
     return(ts)
 }
 
-.UTCTimeString <- function()
+UTCTimeString <- function()
 {
     # Textual representation of current time
     return(format(Sys.time(), '%Y-%m-%dT%H.%M.%S', tz="UTC", usetz=FALSE))

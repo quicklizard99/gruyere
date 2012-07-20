@@ -70,7 +70,7 @@ void PrintParms(const int *n,
                 const double *a, 
                 const double *q, 
                 const double *d, 
-                const double *B0, 
+                const double *W, 
                 const int *producers, 
                 const int *n_producers, 
                 const int *consumers, 
@@ -87,7 +87,7 @@ void PrintParms(const int *n,
     PrintMatrix("a", a, n);
     Rprintf("q: [%e]\n", *q);
     PrintVector("d", d, n);
-    PrintMatrix("B0", B0, n);
+    PrintMatrix("W", W, n);
     PrintIntVector("producers", producers, n_producers);
     PrintIntVector("consumers", consumers, n_consumers);
     PrintVector("rho", rho, n);
@@ -102,7 +102,7 @@ void YodzisInnesState(const int *n_species,     /* n species */
                       const double *a,          /* n x n matrix */
                       const double *q,          /* Single number */
                       const double *d,          /* vector */
-                      const double *B0,         /* n x n matrix */
+                      const double *W,         /* n x n matrix */
                       const int *producers,     /* vector */
                       const int *n_producers,   /* n items in producers */
                       const int *consumers,     /* vector */
@@ -135,7 +135,7 @@ void YodzisInnesState(const int *n_species,     /* n species */
 
     DEBUG(Rprintf("*************************\n"));
     DEBUG(PrintVector("B", B, n_species));
-    DEBUG(PrintParms(n_species, K, a, q, d, B0, producers, n_producers, 
+    DEBUG(PrintParms(n_species, K, a, q, d, W, producers, n_producers, 
                      consumers, n_consumers, rho, x, y, e, fe));
 
     /* Functional response numerator and denominator */
@@ -155,9 +155,9 @@ void YodzisInnesState(const int *n_species,     /* n species */
             for(int i=0; i<n; i++)
             {
                 const int index = j*n + i;
-                if(!ISNA(B0[index]) && !ISNAN(B0[index]))
+                if(!ISNA(W[index]) && !ISNAN(W[index]))
                 {
-                    const double v = pow(B[i] / B0[index], exponent);
+                    const double v = pow(B[i] / W[index], exponent);
                     fr_numerator[index] = v;
                     col_sum += v;
                 }
@@ -287,7 +287,7 @@ void YodzisInnesFast(const int *neq,    /* n equations */
 
    dll.ipar=c(length(producers), length(consumers), 
               producers.c, consumers.c), 
-   dll.rpar=c(K,a,q,d,B0,rho,x,y,e,fe), 
+   dll.rpar=c(K,a,q,d,W,rho,x,y,e,fe), 
    dll.nout=2*NumberOfSpecies(community) + 
             2*NumberOfSpecies(community)^2)
 
@@ -356,7 +356,7 @@ void YodzisInnesFast(const int *neq,    /* n equations */
                          n*n +      /* a - matrix of nxn*/
                          1 +        /* q - single value */
                          n +        /* d - vector of length n */
-                         n*n +      /* B0 - matrix of nxn*/
+                         n*n +      /* W - matrix of nxn*/
                          n +        /* rho - vector of length n */
                          n +        /* x - vector of length n */
                          n*n +      /* y - matrix of nxn*/
@@ -390,8 +390,8 @@ void YodzisInnesFast(const int *neq,    /* n equations */
     const double *a=K+1;                /* n x n matrix */
     const double *q=a+n*n;              /* Single number */
     const double *d=q+1;                /* vector of length n */
-    const double *B0=d+n;               /* n x n matrix */
-    const double *rho=B0+n*n;           /* vector of length n */
+    const double *W=d+n;               /* n x n matrix */
+    const double *rho=W+n*n;           /* vector of length n */
     const double *x=rho+n;              /* vector of length n */
     const double *y=x+n;                /* matrix of n x n */
     const double *e=y+n*n;              /* n x n matrix */
@@ -402,7 +402,7 @@ void YodzisInnesFast(const int *neq,    /* n equations */
                      a, 
                      q, 
                      d, 
-                     B0, 
+                     W, 
                      producers, 
                      n_producers, 
                      consumers, 

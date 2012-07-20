@@ -1,18 +1,15 @@
 # Demonstrates a trophic cascade using the Yodzis and Innes model.
 
 # Three seperate simulations are run, each of a different community. 
-
-# Each simulation uses the same model parameters.
-# The first is of a single-producer, showing that the producer reaches 
-# carrying capacity.
+# Each simulation uses the same model parameters. 
+# The first community has only a producer, showing that the producer reaches 
+# carrying capacity. 
 # The second is of a resource-consumer system, showing that the addition of a 
 # herbivore results in a density of the producer much lower than carrying 
 # capacity. 
-# The third is of three-species chain, showing that a predator limits the 
-# density of the herbivore and allows the producer to reach carrying capacity.
-
-options(warn=2)
-library(gruyere)
+# The third is of three-species chain, showing that the density of the 
+# herbivore is limited by consumption by the predator (rather than availability 
+# of the resource), allowing the producer to (almost) reach carrying capacity.
 
 RunMySimulation <- function(spec, community, max.time=30, ylim=c(-3, 3), 
                             col=c(3, 1, 2))
@@ -27,12 +24,9 @@ RunMySimulation <- function(spec, community, max.time=30, ylim=c(-3, 3),
     params <- IntermediateModelParams(community, spec)
     params <- BuildModelParams(community, params) # containing rho,x,z etc
 
-    # No extinctions
-    simulation <- LSODASimulation(model=YodzisInnesDyDt, 
-                                  params=params, 
-                                  sampling.interval=0.1, 
-                                  atol=1e-20, 
-                                  chunk.time=10)
+    simulation <- ODESimulation(model=YodzisInnesDyDt, 
+                                params=params, 
+                                sampling.interval=0.1)
 
     # Run the simulation until max.time is reached
     res <- RunSimulation(initial.state=Biomass(params$community), 
@@ -59,7 +53,7 @@ RunMySimulation <- function(spec, community, max.time=30, ylim=c(-3, 3),
 
 
 # The same model parameters specification is used by all three simulations
-spec <- ModelParamsSpec(f.constants=AllFConstantsEqual(0.1), K=100, B0=0.5, 
+spec <- ModelParamsSpec(f.constants=AllFConstantsEqual(0.1), K=100, W=0.5, 
                         q=1)
 
 par(mfcol=c(1,3))

@@ -13,7 +13,7 @@ RunSim <- function(model, params, max.time=1000, sampling.interval=0.1)
                          controller=MaxTimeController(max.time=max.time), 
                          observers=list(collector))
 
-    return (get('tseries', collector))
+    return (GetTimeSeries(collector))
 }
 
 TestGrowthModel <- function()
@@ -156,19 +156,19 @@ TestYodzisInnesModelMotifs <- function()
         yRC <- with(params, as.numeric(y['R','C']))
         feRC <- with(params, as.numeric(fe['R','C']))
         eRC <- with(params, as.numeric(e['R','C']))
-        B0RC <- with(params, as.numeric(B0['R','C']))
+        WRC <- with(params, as.numeric(W['R','C']))
         q <- with(params, as.numeric(q))
 
         # Equilibria: eqns 12 and 13 of Yodzis and Innes (1992) on p.1160 
         # using x and y given in eqns 10 and 11, p 1156.
-        Re <- B0RC / (yRC-1)
+        Re <- WRC / (yRC-1)
         yi.equilibria <- c(Re=Re, 
                            Ce=(feRC*eRC / xC) * Re * (1-Re/K))
 
         # Equilibria calculated by Mathematica 8. 
-        equilibria <- c(Re=B0RC*(1/(-1+yRC)) ^ (1/(1+q)), 
-                        Ce=-B0RC*eRC*feRC*rhoR * 
-                           (-K + B0RC*(-1/(1-yRC))^(1/(1+q))) * 
+        equilibria <- c(Re=WRC*(1/(-1+yRC)) ^ (1/(1+q)), 
+                        Ce=-WRC*eRC*feRC*rhoR * 
+                           (-K + WRC*(-1/(1-yRC))^(1/(1+q))) * 
                            (-1/(1-yRC))^(1/(1+q)) / (K*xC) )
 
 
@@ -197,7 +197,7 @@ TestYodzisInnesModelMotifs <- function()
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
         # Link-specific deviations that will be seen in equilibria
-        params$B0['R','C1'] <- 5000
+        params$W['R','C1'] <- 5000
         params$fe['R','C1'] <- 0.6
 
         # Equilibria calculated by Mathematica 8. 
@@ -212,12 +212,12 @@ TestYodzisInnesModelMotifs <- function()
         feC1C2 <- with(params, as.numeric(fe['C1','C2']))
         eRC1 <-  with(params, as.numeric(e['R', 'C1']))
         eC1C2 <- with(params, as.numeric(e['C1','C2']))
-        B0RC1 <-  with(params, as.numeric(B0['R', 'C1']))
-        B0C1C2 <- with(params, as.numeric(B0['C1','C2']))
+        WRC1 <-  with(params, as.numeric(W['R', 'C1']))
+        WC1C2 <- with(params, as.numeric(W['C1','C2']))
         q <- with(params, as.numeric(q))
 
-        equilibria <- c(Re=B0RC1/(-1 + yRC1), 
-                        C1e=-((B0RC1*eRC1*feRC1*rhoR*(B0RC1 + K - K*yRC1)) / 
+        equilibria <- c(Re=WRC1/(-1 + yRC1), 
+                        C1e=-((WRC1*eRC1*feRC1*rhoR*(WRC1 + K - K*yRC1)) / 
                              (K*xC1*(-1 + yRC1)^2)),
                         C2e=0)
 
@@ -242,8 +242,8 @@ TestYodzisInnesModelMotifs <- function()
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
         # Link-specific deviations that will be seen in equilibria
-        params$B0['R','C1'] <- 5000
-        params$B0['R','C2'] <- 500
+        params$W['R','C1'] <- 5000
+        params$W['R','C2'] <- 500
         params$fe['R','C2'] <- 0.6
 
         # Equilibria calculated by Mathematica 8. 
@@ -256,9 +256,9 @@ TestYodzisInnesModelMotifs <- function()
         yRC1 <-  with(params, y['R', 'C1'])
         yRC2 <-  with(params, y['R', 'C2'])
         yC1C2 <- with(params, y['C1','C2'])
-        B0RC1 <-  with(params, B0['R', 'C1'])
-        B0RC2 <-  with(params, B0['R', 'C2'])
-        B0C1C2 <- with(params, B0['C2','C2'])
+        WRC1 <-  with(params, W['R', 'C1'])
+        WRC2 <-  with(params, W['R', 'C2'])
+        WC1C2 <- with(params, W['C2','C2'])
         eRC1 <-  with(params, e['R', 'C1'])
         eRC2 <-  with(params, e['R', 'C2'])
         eC1C2 <- with(params, e['C1','C2'])
@@ -266,9 +266,9 @@ TestYodzisInnesModelMotifs <- function()
         feRC2 <-  with(params, fe['R', 'C2'])
         feC1C2 <- with(params, fe['C1','C2'])
 
-        equilibria <- c(Re=B0RC2 / (-1+yRC2), 
+        equilibria <- c(Re=WRC2 / (-1+yRC2), 
                         C1e=0, 
-                        C2e=-((B0RC2*eRC2*feRC2*rhoR*(B0RC2 + K - K*yRC2)) / 
+                        C2e=-((WRC2*eRC2*feRC2*rhoR*(WRC2 + K - K*yRC2)) / 
                               (K*xC2*(-1 + yRC2)^2)) )
 
         return (list(params=params, equilibria=equilibria))
@@ -292,8 +292,8 @@ TestYodzisInnesModelMotifs <- function()
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
         # Link-specific deviations that will be seen in equilibria
-        params$B0['R','C1'] <- 5000
-        params$B0['R','C2'] <- 500
+        params$W['R','C1'] <- 5000
+        params$W['R','C2'] <- 500
         params$fe['R','C2'] <- 0.6
 
         # Equilibria calculated by Mathematica 8. 
@@ -305,16 +305,16 @@ TestYodzisInnesModelMotifs <- function()
         xC2 <- with(params, as.numeric(x['C2']))
         yRC1 <-  with(params, y['R', 'C1'])
         yRC2 <-  with(params, y['R', 'C2'])
-        B0RC1 <-  with(params, B0['R', 'C1'])
-        B0RC2 <-  with(params, B0['R', 'C2'])
+        WRC1 <-  with(params, W['R', 'C1'])
+        WRC2 <-  with(params, W['R', 'C2'])
         eRC1 <-  with(params, e['R', 'C1'])
         eRC2 <-  with(params, e['R', 'C2'])
         feRC1 <-  with(params, fe['R', 'C1'])
         feRC2 <-  with(params, fe['R', 'C2'])
 
-        equilibria <- c(Re=B0RC2 / (-1+yRC2), 
+        equilibria <- c(Re=WRC2 / (-1+yRC2), 
                         C1e=0, 
-                        C2e=-((B0RC2*eRC2*feRC2*rhoR*(B0RC2 + K - K*yRC2)) / 
+                        C2e=-((WRC2*eRC2*feRC2*rhoR*(WRC2 + K - K*yRC2)) / 
                               (K*xC2*(-1 + yRC2)^2)) )
         return (list(params=params, equilibria=equilibria))
     }
@@ -336,8 +336,8 @@ TestYodzisInnesModelMotifs <- function()
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
         # Link-specific deviations that will be seen in equilibria
-        params$B0['R1','C'] <- 1100
-        params$B0['R2','C'] <- 900
+        params$W['R1','C'] <- 1100
+        params$W['R2','C'] <- 900
         params$fe['R2','C'] <- 0.6
 
         # Equilibria calculated by Mathematica 8. 
@@ -355,16 +355,16 @@ TestYodzisInnesModelMotifs <- function()
         xC <- with(params, as.numeric(x['C']))
         yR1C <- with(params, y['R1','C'])
         yR2C <- with(params, y['R2','C'])
-        B0R1C <- with(params, B0['R1','C'])
-        B0R2C <- with(params, B0['R2','C'])
+        WR1C <- with(params, W['R1','C'])
+        WR2C <- with(params, W['R2','C'])
         eR1C <- with(params, e['R1','C'])
         eR2C <- with(params, e['R2','C'])
         feR1C <- with(params, fe['R1','C'])
         feR2C <- with(params, fe['R2','C'])
 
-        equilibria <-c(R1e=B0R1C/(-1 + yR1C),
+        equilibria <-c(R1e=WR1C/(-1 + yR1C),
                        R2e=0, 
-                       Ce=-((B0R1C*eR1C*feR1C*rhoR1*(aR1R1*B0R1C + K - K*yR1C))/
+                       Ce=-((WR1C*eR1C*feR1C*rhoR1*(aR1R1*WR1C + K - K*yR1C))/
                           (K*xC*(-1 + yR1C)^2)) )
 
         return (list(params=params, equilibria=equilibria))
@@ -387,7 +387,7 @@ TestYodzisInnesModelMotifs <- function()
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
         # Link-specific deviations that will be seen in equilibria
-        params$B0['R','C2'] <- 900
+        params$W['R','C2'] <- 900
         params$fe['R','C2'] <- 0.9
 
         # Equilibria calculated by Mathematica 8. 
@@ -402,10 +402,10 @@ TestYodzisInnesModelMotifs <- function()
         yRC2 <-   with(params, y['R',  'C2'])
         yC1C3 <-  with(params, y['C1','C3'])
         yC2C3 <-  with(params, y['C2','C3'])
-        B0RC1 <-  with(params, B0['R', 'C1'])
-        B0RC2 <-  with(params, B0['R', 'C2'])
-        B0C1C3 <- with(params, B0['C1', 'C3'])
-        B0C2C3 <- with(params, B0['C2', 'C3'])
+        WRC1 <-  with(params, W['R', 'C1'])
+        WRC2 <-  with(params, W['R', 'C2'])
+        WC1C3 <- with(params, W['C1', 'C3'])
+        WC2C3 <- with(params, W['C2', 'C3'])
         eRC1 <-   with(params, e['R', 'C1'])
         eRC2 <-   with(params, e['R', 'C2'])
         eC1C3 <-  with(params, e['C1', 'C3'])
@@ -415,12 +415,11 @@ TestYodzisInnesModelMotifs <- function()
         feC1C3 <-  with(params, fe['C1', 'C3'])
         feC2C3 <-  with(params, fe['C2', 'C3'])
 
-        equilibria <- c(Re=B0RC2/(-1 + yRC2), 
+        equilibria <- c(Re=WRC2/(-1 + yRC2), 
                         C1e=0, 
-                        C2e=-((B0RC2*eRC2*feRC2*rhoR*(B0RC2 + K - K*yRC2)) / 
+                        C2e=-((WRC2*eRC2*feRC2*rhoR*(WRC2 + K - K*yRC2)) / 
                               (K*xC2*(-1 + yRC2)^2)),
                         C3e=0)
-
 
         return (list(params=params, equilibria=equilibria))
     }

@@ -15,7 +15,7 @@ YodzisInnesDyDt <- function(time, B, params)
     }
 
     res <- .C('YodzisInnesState', params$n.species, params$K, params$a, 
-              params$q, params$d, params$B0, 
+              params$q, params$d, params$W, 
               params$producers.c, params$n.producers, 
               params$consumers.c, params$n.consumers,
               params$rho, params$x, params$y, params$e, params$fe, B, 
@@ -54,7 +54,7 @@ YodzisInnesFlux <- function(B, params)
 {
     # Returns growth, respiration, consumption and assimilation terms
     res <- .C('YodzisInnesState', params$n.species, params$K, params$a, 
-              params$q, params$d, params$B0, 
+              params$q, params$d, params$W, 
               params$producers.c, params$n.producers, 
               params$consumers.c, params$n.consumers,
               params$rho, params$x, params$y, params$e, params$fe, B, 
@@ -134,7 +134,7 @@ YodzisInnesFlux_R <- function(B, params)
         respiration <- -x[consumers] * B[consumers]
 
         # An n x n matrix
-        fr.numerator <- (matrix(B, ncol=n.species, nrow=n.species)/B0)^(1+q)
+        fr.numerator <- (matrix(B, ncol=n.species, nrow=n.species)/W)^(1+q)
         fr.denominator <- 1 + d*B + colSums(fr.numerator, na.rm=TRUE)
         fr.denominator <- matrix(fr.denominator, nrow=n.species, 
                                  ncol=n.species, byrow=TRUE)

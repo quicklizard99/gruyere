@@ -1,5 +1,5 @@
 # Lotka-Volterra
-# Demonstrates LSODASimulation(), RunSimulation() and observers
+# Demonstrates ODESimulation(), RunSimulation() and observers
 LVDyDt <- function(time, y, params)
 {
     R <- y[1]
@@ -15,10 +15,9 @@ LVDyDt <- function(time, y, params)
 
 params <- list(r = 1.5, a=0.15, e=0.05, d=0.05, K=100)
 
-simulation <- LSODASimulation(model=LVDyDt, 
-                              params=params, 
-                              sampling.interval=0.1,
-                              use.atol=FALSE)
+simulation <- ODESimulation(model=LVDyDt, 
+                            params=params, 
+                            sampling.interval=0.1)
 
 # Collect simulation results in memory
 collector <- CollectChunksObserver()
@@ -36,7 +35,7 @@ Ce <- with(params, r * (K-Re) / (a * K))
 stopifnot(isTRUE(all.equal(Re, with(params, d / (a*e)))))
 stopifnot(isTRUE(all.equal(Ce, with(params, r * (a*e*K-d) / (e*K*a^2)))))
 
-tseries <- get('tseries', collector)
+tseries <- GetTimeSeries(collector)
 
 # Plot the results
 split.screen(c(1,2))

@@ -26,6 +26,7 @@
                             line.col=DefaultLinkColour(), 
                             lwd=1,
                             pch.now=4, 
+                            main=CPS(community)$title, 
                             ...)
 {
     stopifnot(length(y.0)==NumberOfNodes(community))
@@ -42,7 +43,7 @@
     points <- PlaceMissingPoints(rep(log10M, 2), xlim, c(log10y.0, log10y.now), 
                                  ylim)
 
-    plot(points[,1], points[,2], type='n', xlim=xlim, ylim=ylim, ...)
+    plot(points[,1], points[,2], type='n', xlim=xlim, ylim=ylim, main=main, ...)
     cheddar:::.AddAxisTicks(...)
 
     # Draw lines between log10y.0 and log10y.now
@@ -80,7 +81,6 @@
                          ...)
 
     # Plot y.now
-
     cheddar:::.PlotNodes(community=community, 
                          x=points[(1:n)+n,1], 
                          y=points[(1:n)+n,2], 
@@ -100,7 +100,6 @@
 
 PlotNDeviations <- function(community, N.now, 
                             xlab=Log10MLabel(community), 
-                            main=CPS(community)$title, 
                             ylab=Log10NLabel(community), 
                             ...)
 {
@@ -109,12 +108,11 @@ PlotNDeviations <- function(community, N.now,
     cheddar:::.RequireN(community)
 
     .PlotDeviations(community=community, y.0=NP(community, 'N'), N.now, 
-                    xlab=xlab, ylab=ylab, main=main, ...)
+                    xlab=xlab, ylab=ylab, ...)
 }
 
 PlotBDeviations <- function(community, B.now, 
                             xlab=Log10MLabel(community), 
-                            main=CPS(community)$title, 
                             ylab=Log10BLabel(community), 
                             ...)
 {
@@ -123,20 +121,37 @@ PlotBDeviations <- function(community, B.now,
     cheddar:::.RequireN(community)
 
     .PlotDeviations(community=community, y.0=Biomass(community), B.now, 
-                    xlab=xlab, ylab=ylab, main=main, ...)
+                    xlab=xlab, ylab=ylab, ...)
 }
 
-.PlotYvT <- function(community, tseries, category, from, from.time, 
-                     to, to.time, xlab, xlim, ylab, ylim, show.legend, 
-                     col, lty, divide.Y.by.M, plot.species.labels, 
-                     cex=1, ...)
+.PlotYvT <- function(community, tseries, 
+                     category, col, 
+                     from=1, from.time=NULL, 
+                     to=nrow(tseries), to.time=NULL, 
+                     main=CPS(community)$title, 
+                     xlab="time (t')", xlim=NULL, 
+                     ylab=NULL, ylim=NULL, 
+                     show.legend=FALSE, 
+                     lty=1, 
+                     divide.Y.by.M, 
+                     ...)
 {
-    # TODO colour.spec scheme as used by cheddar
     # A private helper that plot timeseries values against time
+
     # If divide.Y.by.M is TRUE, the tseries data are divided by community$M 
     # before plotting. Only the subset of tseries to be plotted is divided 
     # by M, giving a performance gain when plotting a small subset of a large 
     # tseries.
+
+    if(missing(category))
+    {
+        category <- NP(community, 'node')
+    }
+
+    if(missing(col))
+    {
+        col <- DefaultCategoryColours()[NP(community, 'category')]
+    }
 
     if(!is.null(from.time))
     {
@@ -157,9 +172,17 @@ PlotBDeviations <- function(community, B.now,
     {
         tseries <- t(apply(tseries,1,'/',NP(community, 'M')))
     }
-    y <- sapply(unique(category), 
-                function(c) apply(tseries[,category==c,drop=FALSE], 1, sum))
-    colnames(y) <- unique(category)
+
+    if(all(category==colnames(tseries)))
+    {
+        y <- tseries
+    }
+    else
+    {
+        y <- sapply(unique(category), 
+                    function(c) apply(tseries[,category==c,drop=FALSE], 1, sum))
+        colnames(y) <- unique(category)
+    }
 
     if(missing(col))
     {
@@ -174,13 +197,8 @@ PlotBDeviations <- function(community, B.now,
         }
     }
 
-    if(FALSE && !is.null(names(col)))
-    {
-        col <- col[colnames(y)]
-    }
-
     matplot(time, log10(y), type="l", xlab=xlab, xlim=xlim, ylab=ylab, 
-            ylim=ylim, col=col, lty=lty, cex=cex, ...)
+            ylim=ylim, col=col, lty=lty, main=main, ...)
 
     if(FALSE)
     {
@@ -203,8 +221,7 @@ PlotBDeviations <- function(community, B.now,
             sapply(names(extinct), 
                    function(e) text(tseries[extinct[e],'time'], 
                                     log10(y[extinct[e],e]), 
-                                    species.labels[e], 
-                                    cex=cex))
+                                    species.labels[e]))
         }
 
         if(plot.species.labels)
@@ -219,14 +236,14 @@ PlotBDeviations <- function(community, B.now,
             if(length(extant)>0)
             {
                 text(x=tseries[to, 'time'], y=log10(tail(y, 1)[,extant]), 
-                     labels=species.labels[extant], pos=4, cex=cex, ...)
+                     labels=species.labels[extant], pos=4, ...)
             }
         }
     }
 
     if(FALSE && show.legend)
     {
-        legend("topright", legend=colnames(y), lty=lty, col=col, cex=cex)
+        legend("topright", legend=colnames(y), lty=lty, col=col)
     }
 
     # Tick marks at top and bottom of plot
@@ -234,299 +251,13 @@ PlotBDeviations <- function(community, B.now,
     axis(4, labels=FALSE)
 }
 
-PlotNvT <- function(community, tseries, 
-          category=relevel(factor(NP(community, 'category')), 'producer'),
-          from=1, from.time=NULL, 
-          to=nrow(tseries), to.time=NULL, 
-          main=CPS(community)$title, 
-          xlab="time (t')", xlim=NULL, 
-          ylab=Log10NLabel(community), ylim=NULL, 
-          col, 
-          show.legend=FALSE, 
-          lty=1, ...)
+PlotNvT <- function(community, tseries, ylab=Log10NLabel(community), ...)
 {
-    .PlotYvT(community, 
-             tseries, 
-             category, 
-             from=from, from.time=from.time, 
-             to=to, to.time=to.time, 
-             xlab=xlab, xlim=xlim, ylab=ylab, ylim=ylim, 
-             show.legend=show.legend, col=col, lty=lty, 
-             divide.Y.by.M=TRUE, main=main, ...)
+    .PlotYvT(community, tseries, divide.Y.by.M=TRUE, ylab=ylab, ...)
 }
 
-PlotBvT <- function(community, tseries, 
-          category=relevel(factor(NP(community, 'category')), 'producer'),
-          from=1, from.time=NULL, 
-          to=nrow(tseries), to.time=NULL, 
-          main=CPS(community)$title, 
-          xlab="time (t')", xlim=NULL, 
-          ylab=Log10BLabel(community), ylim=NULL, 
-          col, 
-          show.legend=FALSE, 
-          lty=1, ...)
+PlotBvT <- function(community, tseries, ylab=Log10BLabel(community), ...)
 {
-    .PlotYvT(community, 
-             tseries, 
-             category, 
-             from=from, from.time=from.time, 
-             to=to, to.time=to.time, 
-             xlab=xlab, xlim=xlim, ylab=ylab, ylim=ylim, 
-             show.legend=show.legend, col=col, lty=lty, 
-             divide.Y.by.M=FALSE, main=main, ...)
-}
-
-FormatSSEModel <- function(sse.model)
-{
-    # A string representation for SSE model
-    return (substitute(italic(SSE[model]) == s, 
-                       list(s=sprintf("%.2f",sse.model))))
-}
-
-FormatSSERegression <- function(community)
-{
-    return (substitute(italic(SSE[regression]) == sse, 
-                       list(sse=sprintf("%.2f", SSERegression(community)))))
-}
-
-PlotFluxBars <- function(community, flux, time, ylim=NULL, 
-                         ylab=as.formula(paste('log[10](italic(B)) ~ (', 
-                                               CP(community, 'M.units'), '~', 
-                                               CP(community, 'N.units'), 
-                                               '~ year^-1)',
-                                               sep='')),
-                         col=c(growth='green3', respiration='purple3', 
-                               consumption='blue3', assimilation='red3'))
-{
-    # Plots log10-transformed flux per species at the given time index
-    growth <- log10(flux$growth[time,])
-    respiration <- log10(flux$respiration[time,])
-    total.consumption <- log10(flux$total.consumption[time,])
-    total.assimilation <- log10(flux$total.assimilation[time,])
-
-    growth[is.infinite(growth)] <- NA
-    respiration[is.infinite(respiration)] <- NA
-    total.consumption[is.infinite(total.consumption)] <- NA
-    total.assimilation[is.infinite(total.assimilation)] <- NA
-
-    if(is.null(ylim))
-    {
-        ylim <- range(c(0, growth, respiration, 
-                        total.consumption, 
-                        total.assimilation), na.rm=TRUE)
-    }
-
-    plot(0, 0, xlim=c(0, NumberOfNodes(community)), ylim=ylim, ylab=ylab, 
-         type='n', main=paste('Flux at', flux$time[time]))
-
-    producers <- NodeNameIndices(community, Producers(community))
-    segments(producers-1, growth[producers], producers, 
-             growth[producers], col=col['growth'])
-
-    segments( (1:NumberOfNodes(community))-1, total.consumption, 
-             1:NumberOfNodes(community), total.consumption, 
-             col=col['consumption'])
-
-    consumers <- NodeNameIndices(community, Consumers(community))
-    segments(consumers-1, respiration[consumers], consumers, 
-             respiration[consumers], col=col['respiration'])
-
-    segments(consumers-1, total.assimilation[consumers], consumers, 
-             total.assimilation[consumers], col=col['assimilation'])
-}
-
-PlotFlux <- function(community, flux, species, xlab="time (t')", lty=1, 
-                     col=c(growth='green3', respiration='purple3', 
-                                  consumption='blue3', assimilation='red3'), 
-                     plot.log10=FALSE, ylim, ...)
-{
-    # Plots absolute flux for a single species
-    species <- cheddar:::.ResolveToNodeIndices(community, species)
-
-    stopifnot(1==length(species))
-
-    if(TRUE)
-    {
-        flux$respiration <- -flux$respiration
-        flux$consumption <- -flux$consumption
-        flux$total.consumption <- -flux$total.consumption
-    }
-
-    if(plot.log10)
-    {
-        ylab <- as.formula(paste('log[10](italic(B)) ~ (', 
-                                 CP(community,'M.units'), '~', 
-                                 CP(community,'N.units'), '~ year^-1)',
-                                 sep=''))
-
-        growth <- log10(flux$growth[,species])
-        respiration <- log10(flux$respiration[,species])
-        consumption <- log10(flux$consumption[,species,])
-        total.consumption <- log10(flux$total.consumption[,species])
-        assimilation <- log10(flux$assimilation[,,species])
-        total.assimilation <- log10(flux$total.assimilation[,species])
-
-        growth[is.infinite(growth)] <- NA
-        respiration[is.infinite(respiration)] <- NA
-        consumption[is.infinite(consumption)] <- NA
-        total.consumption[is.infinite(total.consumption)] <- NA
-        assimilation[is.infinite(assimilation)] <- NA
-        total.assimilation[is.infinite(total.assimilation)] <- NA
-        total <- rep(NA, length(growth))
-    }
-    else
-    {
-        ylab <- as.formula(paste('B ~ (', 
-                                 CP(community, 'M.units'), '~', 
-                                 CP(community, 'N.units'), '~ year^-1)',
-                                 sep=''))
-
-        growth <- flux$growth[,species]
-        respiration <- flux$respiration[,species]
-        consumption <- flux$consumption[,species,]
-        total.consumption <- flux$total.consumption[,species]
-        assimilation <- flux$assimilation[,,species]
-        total.assimilation <- flux$total.assimilation[,species]
-        total <- flux$total[,species]
-    }
-
-    if(missing(ylim))
-    {
-        ylim <- range(c(growth, respiration, consumption, total.consumption, 
-                        assimilation, total.assimilation, total), na.rm=TRUE)
-    }
-
-    plot(0, 0, xlim=c(flux$time[1], tail(flux$time,1)), ylim=ylim, type="n", 
-         xlab="time (t')", ylab=ylab, 
-         main=paste("Absolute biomass fluxes for ", 
-                    NP(community, 'node')[species], ' [', species, ']', sep=''), 
-         ...)
-
-    if(!plot.log10)
-    {
-        # A zero flux line
-        abline(h=0, col="grey")
-    }
-
-    .PlotFluxLines(community, species, flux$time, growth, respiration, 
-                   consumption, total.consumption, assimilation, 
-                   total.assimilation, total, col, lty, ylim, ylab, ...)
-    .PlotFluxLabels(community, species, flux$time, growth, respiration, 
-                    consumption, total.consumption, assimilation, 
-                    total.assimilation, col)
-}
-
-.PlotFluxLines <- function(community, species, time, growth, respiration, 
-                           consumption, total.consumption, assimilation, 
-                           total.assimilation, total, col, lty, ylim, ylab, ...)
-{
-    # na.rm=TRUE because some entries will be NA, e.g. respiration for a 
-    # producer
-
-    # Need to be careful here because species might not have consumers
-    # and consumers might not have any resource species
-    if(IsProducer(community)[species])
-    {
-        lines(time, growth, col=col['growth'], lty=lty, ...)
-    }
-    else if(IsConsumer(community)[species])
-    {
-        lines(time, respiration, col=col['respiration'], ...)
-        resources <- ResourcesByNode(community)[[species]]
-        if(length(resources)>0)
-        {
-            matlines(time, assimilation[,resources], col=col['assimilation'], 
-                     lty=lty, ...)
-            if(length(resources)>1)
-            {
-                lines(time, total.assimilation, col=col['assimilation'], 
-                      lty=lty, ...)
-            }
-        }
-    }
-    consumers <- ConsumersByNode(community)[[species]]
-    if(length(consumers)>0)
-    {
-        matlines(time, consumption[,consumers], col=col['consumption'], 
-                 lty=lty, ...)
-        if(length(consumers)>1)
-        {
-            lines(time, total.consumption, col=col['consumption'], 
-                  lty=lty, ...)
-        }
-    }
-
-    if(!is.null(total))
-    {
-        lines(time, total, lty=lty, ...)
-    }
-}
-
-.PlotFluxLabels <- function(community, species, time, growth, respiration, 
-                            consumption, total.consumption, assimilation, 
-                            total.assimilation, col)
-{
-    # Place labels next to each flux line
-    # Labels are positioned either at left or right of each trace 
-    # depending on where the space is
-    first <- 1
-    last <- length(time)
-    range.start <- range(c(growth[first], 
-                           respiration[first], 
-                           total.consumption[first], 
-                           total.assimilation[first]), na.rm=TRUE)
-    range.end <- range(c(growth[last], 
-                         respiration[last], 
-                         total.consumption[last], 
-                         total.assimilation[last]), na.rm=TRUE)
-
-    if(diff(range.start) > diff(range.end))
-    {
-        text.i <- first
-        text.pos <- 2
-    }
-    else
-    {
-        text.i <- last
-        text.pos <- 4
-    }
-
-    if(IsProducer(community)[species])
-    {
-        text(x=time[text.i], y=growth[text.i], labels="G+", 
-             cex=0.8, col=col['growth'], pos=text.pos)
-    }
-    else if(IsConsumer(community)[species])
-    {
-        text(x=time[text.i], y=respiration[text.i], 
-             labels="R-", cex=0.8, col=col['respiration'], pos=text.pos)
-        resources <- ResourcesByNode(community)[[species]]
-        text(x=rep(time[text.i],length(resources)), 
-             y=assimilation[text.i, resources], 
-             labels=paste(ResourcesByNode(community)[[species]], '+'), 
-             cex=0.8, col=col['assimilation'], pos=text.pos)
-        if(length(resources)>1)
-        {
-            text(x=time[text.i], 
-                 y=total.assimilation[text.i], 
-                 labels="T+", cex=0.8, pos=text.pos, col=col['assimilation'])
-        }
-    }
-
-    consumers <- ConsumersByNode(community)[[species]]
-    if(length(consumers)>0)
-    {
-        text(x=rep(time[text.i],length(consumers)), 
-             y=consumption[text.i, consumers], 
-             labels=paste(ConsumersByNode(community)[[species]], '-'), 
-             cex=0.8, col=col['consumption'], pos=text.pos)
-
-        if(length(consumers)>1)
-        {
-            text(x=time[text.i], 
-                 y=total.consumption[text.i], 
-                 labels="T-", cex=0.8, pos=text.pos, col=col['consumption'])
-        }
-    }
+    .PlotYvT(community, tseries, divide.Y.by.M=FALSE, ylab=ylab, ...)
 }
 

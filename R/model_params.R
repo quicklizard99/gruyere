@@ -83,8 +83,8 @@ AllFConstantsEqual <- function(v=1)
         stopifnot(0<=e.consumer && e.consumer<=1)
         stopifnot(1==length(fe))
         stopifnot(0<=fe && fe<=1)
-        stopifnot(1==length(B0))
-        stopifnot(0<B0 && B0<Inf)
+        stopifnot(1==length(W))
+        stopifnot(0<W && W<Inf)
         stopifnot(1==length(d))
         stopifnot(0<=d && d<=Inf)
         stopifnot(1==length(q))
@@ -101,50 +101,44 @@ ModelParamsSpec <- function(a.constants=YodzisInnes92AConstants(),
                             e.producer=0.45, 
                             e.consumer=0.85, 
                             fe=1, 
-                            B0=1000, # Half-saturation biomass
+                            W=1000,  # Half-saturation biomass
+                            B0,      # Old symbol for half-saturation biomass
                             d=0,     # Predator interference
                             q=0,     # Shape of response
                             K=500,   # Carrying capacity
                             a=1)
 {
+    if(!missing(B0))
+    {
+        warning(paste('B0 is the old symbol for functional response', 
+                      'half-saturation biomass. Please use W in place of B0.'))
+        B0 <- W
+    }
+
     p <- c(unlist(a.constants), unlist(f.constants), e.producer=e.producer, 
-           e.consumer=e.consumer, fe=fe, B0=B0, d=d, q=q, K=K, a=a)
+           e.consumer=e.consumer, fe=fe, W=W, d=d, q=q, K=K, a=a)
     .CheckModelParamsSpec(p)
     return (p)
 }
 
-SaveModelParamsSpec <- function(params.spec, dir)
-{
-    write.csv(do.call('cbind.data.frame', params.spec), 
-              file.path(dir, 'params_spec.csv'), row.names=FALSE)
-}
-
-LoadModelParamsSpec <- function(dir)
-{
-    params.spec <- read.csv(file.path(dir, 'params_spec.csv'))
-    stopifnot(1==nrow(params.spec))
-    params.spec <- do.call(list, params.spec[1,,drop=FALSE])
-    return(params.spec)
-}
-
-IsProducer <- function(community)
+.IsProducer <- function(community)
 {
     return ('producer'==NP(community, 'category'))
 }
 
-Producers <- function(community)
+.Producers <- function(community)
 {
-    return (names(which(IsProducer(community))))
+    return (names(which(.IsProducer(community))))
 }
 
-IsConsumer <- function(community)
+.IsConsumer <- function(community)
 {
     return ('producer'!=NP(community, 'category'))
 }
 
-Consumers <- function(community)
+.Consumers <- function(community)
 {
-    return (names(which(IsConsumer(community))))
+    return (names(which(.IsConsumer(community))))
 }
 
 IntermediateModelParams <- function(community, spec)
@@ -162,23 +156,23 @@ IntermediateModelParams <- function(community, spec)
     #   fe
     #   e
     #   a   (growth model)
-    #   B0  (growth model)
+    #   W   (growth model)
     #   d   (functional response)
     #   q   (functional response)
 
     # and the integer value:
-    #   s
+    #   m
 
     # Is this community suitable for running this simulation?
     stopifnot('M' %in% NodePropertyNames(community))
-    stopifnot('N' %in% NodePropertyNames(community))
+    stopifnot(all(!is.na(NP(community, 'M'))))
     stopifnot(all(NP(community, 'category') %in% c('producer', 'invertebrate', 
                                                    'vert.ecto', 'vert.endo')))
     stopifnot('kg'==CP(community, 'M.units'))
 
     # The model requires at least one producer. Time is normalised to the 
     # producer with the smallest mass.
-    stopifnot(length(Producers(community))>0)
+    stopifnot(length(.Producers(community))>0)
 
     # Some basic checks on the parameters spec
     .CheckModelParamsSpec(spec)
@@ -191,7 +185,7 @@ IntermediateModelParams <- function(community, spec)
         # metabolic category.
         indices <- paste(constant, '.', NP(community,'category'), sep='')
         v <- spec[indices]
-        names(v) <- NP(community,'node')
+        names(v) <- unname(NP(community,'node'))
         return (v)
     }
 
@@ -199,15 +193,15 @@ IntermediateModelParams <- function(community, spec)
     {
         n <- NumberOfNodes(community)
         pm <- PredationMatrix(community)
-        node <- NP(community, 'node')
+        node <- unname(NP(community, 'node'))
         fJ <- matrix(ParamVector('fJ'), nrow=n, ncol=n, byrow=TRUE)
         fJ[0==pm] <- NA
         rownames(fJ) <- colnames(fJ) <- node
 
         e <- matrix(NA, nrow=n, ncol=n)
         colnames(e) <- rownames(e) <- node
-        e[Producers(community),] <- e.producer
-        e[Consumers(community),] <- e.consumer
+        e[.Producers(community),] <- e.producer
+        e[.Consumers(community),] <- e.consumer
         e[0==pm] <- NA
 
         fe <- matrix(fe, nrow=n, ncol=n)
@@ -218,24 +212,24 @@ IntermediateModelParams <- function(community, spec)
         # Could have several populations with the same smallest mass - take 
         # the first of these.
         M <- NP(community, 'M')
-        s <- order(M)[1]
-        s <- Producers(community)[order(M[IsProducer(community)])[1]]
-        s <- NodeNameIndices(community, s)
+        m <- order(M)[1]
+        m <- .Producers(community)[order(M[.IsProducer(community)])[1]]
+        m <- NodeNameIndices(community, m)
 
         # Functional response
-        B0 <- matrix(B0, nrow=n, ncol=n)
-        B0[pm==0] <- NA
-        rownames(B0) <- colnames(B0) <- node
+        W <- matrix(W, nrow=n, ncol=n)
+        W[pm==0] <- NA
+        rownames(W) <- colnames(W) <- node
 
         d <- rep(d, n)
         names(d) <- node
-        d[Producers(community)] <- NA
+        d[.Producers(community)] <- NA
 
         # Growth model
         a <- matrix(a, nrow=n, ncol=n)
         rownames(a) <- colnames(a) <- node
-        a[Consumers(community),] <- NA
-        a[,Consumers(community)] <- NA
+        a[.Consumers(community),] <- NA
+        a[,.Consumers(community)] <- NA
 
         return (list(ar=ParamVector('ar'),
                      aT=ParamVector('aT'),
@@ -243,21 +237,21 @@ IntermediateModelParams <- function(community, spec)
                      fr=ParamVector('fr'),
                      fT=ParamVector('fT'),
                      fJ=fJ,
-                     s=s,
+                     m=m,
                      e=e,
                      fe=fe, 
-                     B0=B0, d=d, q=q,   # Functional response
+                     W=W, d=d, q=q,   # Functional response
                      K=K, a=a))         # Growth model
     })
 }
 
-BuildModelParams <- function(community, params, exponent=0.25)
+BuildModelParams <- function(community, params, exponent=1/4)
 {
     # Returns a list containing the vectors of model parameters:
     #   rho (would rather use ρ rather than rho but R recommends using ASCII)
     #   x
     #   e
-    #   B0
+    #   W
     #   d
     #   q
     #   K
@@ -277,11 +271,15 @@ BuildModelParams <- function(community, params, exponent=0.25)
     #   n.consumers
 
     # Checks on model parameters
+
+    stopifnot(is.list(params))
+    stopifnot(!is.null(names(params)))
+
     with(params, 
     {
         n <- NumberOfNodes(community)
-        producers <- Producers(community)
-        consumers <- Consumers(community)
+        producers <- .Producers(community)
+        consumers <- .Consumers(community)
         pm <- PredationMatrix(community)
 
         stopifnot(all(is.na(ar[consumers])))
@@ -309,8 +307,8 @@ BuildModelParams <- function(community, params, exponent=0.25)
                          fJ[1==pm]<=Inf))
         stopifnot(all(c(n,n) == dim(fJ)))
 
-        stopifnot(1==length(s)) 
-        stopifnot(0<s & s<=n) 
+        stopifnot(1==length(m)) 
+        stopifnot(0<m & m<=n) 
 
         stopifnot(all(is.na(e[0==pm])))
         stopifnot(all(0<=e[1==pm] & 
@@ -322,10 +320,10 @@ BuildModelParams <- function(community, params, exponent=0.25)
                          fe[1==pm]<=1))
         stopifnot(all(c(n,n) == dim(fe)))
 
-        stopifnot(all(is.na(B0[0==pm])))
-        stopifnot(all(0<B0[1==pm] & 
-                        B0[1==pm]<Inf))
-        stopifnot(all(c(n,n) == dim(B0)))
+        stopifnot(all(is.na(W[0==pm])))
+        stopifnot(all(0<W[1==pm] & 
+                        W[1==pm]<Inf))
+        stopifnot(all(c(n,n) == dim(W)))
 
         stopifnot(all(is.na(d[producers]))) 
         stopifnot(all(0<=d[consumers] & d[consumers]<=Inf))
@@ -343,9 +341,9 @@ BuildModelParams <- function(community, params, exponent=0.25)
     {
         M <- NP(community, 'M')
 
-        m.term <- ((M[s]/M)^exponent)
-        rho <- ((fr * ar)/(fr[s] * ar[s])) * m.term
-        x <- ((fT * aT)/(fr[s] * ar[s])) * m.term
+        m.term <- ((M[m]/M)^exponent)
+        rho <- ((fr * ar)/(fr[m] * ar[m])) * m.term
+        x <- ((fT * aT)/(fr[m] * ar[m])) * m.term
         y <- fJ * 
              matrix(aJ, nrow=length(M), ncol=length(M), byrow=TRUE) / 
              matrix(fT*aT, nrow=length(M), ncol=length(M), byrow=TRUE)
@@ -353,8 +351,8 @@ BuildModelParams <- function(community, params, exponent=0.25)
         # Good to cache vectors of producers and consumers for performance.
 
         # R is 1-indexed
-        producers <- NodeNameIndices(community, Producers(community))
-        consumers <- NodeNameIndices(community, Consumers(community))
+        producers <- NodeNameIndices(community, .Producers(community))
+        consumers <- NodeNameIndices(community, .Consumers(community))
 
         # C is 0-indexed.
         producers.c <- as.integer(producers-1)
@@ -369,7 +367,7 @@ BuildModelParams <- function(community, params, exponent=0.25)
 
         # A multiplier to convert units of t' (model equations) to years
         # Homage to Yodzis and Innes, 2.13 (p 42):
-        one.t.prime <- 1/as.numeric(fr[s]*ar[s]*(M[s]^-exponent))
+        one.t.prime <- 1/as.numeric(fr[m]*ar[m]*(M[m]^-exponent))
 
         params <- list(community=community, 
                        n.species=NumberOfNodes(community), 
@@ -380,11 +378,11 @@ BuildModelParams <- function(community, params, exponent=0.25)
                        consumers.c=consumers.c, 
                        n.consumers=length(consumers),
                        rho=rho, x=x, y=y, e=e, fe=fe, 
-                       B0=B0, d=d, q=q, # Functional response
+                       W=W, d=d, q=q, # Functional response
                        K=K, a=a,        # Growth model
                        # The following are not required by model equations but 
                        # are useful for subsequent analyses.
-                       s=s, one.t.prime=one.t.prime)
+                       m=m, one.t.prime=one.t.prime)
 
         .CheckModelParams(params)
 
@@ -418,9 +416,9 @@ BuildModelParams <- function(community, params, exponent=0.25)
          stopifnot(all(0<=fe[1==pm] & 
                           fe[1==pm]<=1))
 
-         stopifnot(all(is.na(B0[0==pm])))
-         stopifnot(all(0<B0[1==pm] & 
-                         B0[1==pm]<Inf))
+         stopifnot(all(is.na(W[0==pm])))
+         stopifnot(all(0<W[1==pm] & 
+                         W[1==pm]<Inf))
 
          stopifnot(all(is.na(d[producers])))
          stopifnot(all(0<=d[consumers] & d[consumers]<=Inf))

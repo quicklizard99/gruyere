@@ -50,7 +50,7 @@ ExtinctionsFeedbackObserver <- function()
     return(self)
 }
 
-.extinctions.feedback.worker <- function(self, state)
+.ExtinctionsFeedbackWorker <- function(self, state)
 {
     # Does the job of recording and reporting new extinctions
     previous <- get('extinct', self)
@@ -71,18 +71,18 @@ ExtinctionsFeedbackObserver <- function()
 SimStart.ExtinctionsFeedbackObserver <- function(self, initial.state)
 {
     assign('extinct', rep(FALSE, length(initial.state)), self)
-    .extinctions.feedback.worker(self, initial.state)
+    .ExtinctionsFeedbackWorker(self, initial.state)
 }
 
 SimChunk.ExtinctionsFeedbackObserver <- function(self, chunk)
 {
     current.state <- tail(chunk, 1)[,-1]
-    .extinctions.feedback.worker(self, current.state)
+    .ExtinctionsFeedbackWorker(self, current.state)
 }
 
 SimEnd.ExtinctionsFeedbackObserver <- function(self, time, final.state)
 {
-    .extinctions.feedback.worker(self, final.state)
+    .ExtinctionsFeedbackWorker(self, final.state)
     cat(paste(sum(get('extinct', self)), 'extinctions\n'))
 }
 
@@ -180,6 +180,40 @@ SimEnd.TimeBetweenChunksObserver <- function(self, time, final.state)
 }
 
 
+PlotBDeviationsObserver <- function(community, ...)
+{
+    self <- list(community=community, plot.params=list(...))
+    class(self) <- c('PlotBDeviationsObserver', class(self))
+    return(self)
+}
+
+SimStart.PlotBDeviationsObserver <- function(self, initial.state)
+{
+    do.call('PlotBDeviations', c(list(community=self$community, 
+                                       B.now=initial.state,
+                                       main="time=0"), 
+                                       self$plot.params))
+}
+
+SimChunk.PlotBDeviationsObserver <- function(self, chunk)
+{
+    time <- tail(chunk, 1)[1]
+    current.state <- tail(chunk, 1)[2:ncol(chunk)]
+    do.call('PlotBDeviations', c(list(community=self$community, 
+                                      B.now=current.state, 
+                                      main=paste('time=', time, sep='')), 
+                                      self$plot.params))
+}
+
+SimEnd.PlotBDeviationsObserver <- function(self, time, final.state)
+{
+    do.call('PlotBDeviations', c(list(community=self$community, 
+                                      B.now=final.state, 
+                                      main=paste('final time=', time, sep='')), 
+                                      self$plot.params))
+}
+
+
 PlotNDeviationsObserver <- function(community, ...)
 {
     self <- list(community=community, plot.params=list(...))
@@ -190,10 +224,10 @@ PlotNDeviationsObserver <- function(community, ...)
 SimStart.PlotNDeviationsObserver <- function(self, initial.state)
 {
     M <- NP(self$community,'M')
-    do.call('PlotNDeviationsObserver', c(list(community=self$community, 
-                                             N.now=initial.state/M,
-                                             main="time=0"), 
-                                             self$plot.params))
+    do.call('PlotNDeviations', c(list(community=self$community, 
+                                       N.now=initial.state/M,
+                                       main="time=0"), 
+                                       self$plot.params))
 }
 
 SimChunk.PlotNDeviationsObserver <- function(self, chunk)
@@ -211,7 +245,7 @@ SimEnd.PlotNDeviationsObserver <- function(self, time, final.state)
 {
     M <- NP(self$community,'M')
     do.call('PlotNDeviations', c(list(community=self$community, 
-                                      N=final.state/M, 
+                                      N.now=final.state/M, 
                                       main=paste('final time=', time, sep='')), 
                                       self$plot.params))
 }
@@ -248,6 +282,43 @@ SimEnd.PlotBvTObserver <- function(self, time, final.state)
 {
     NextMethod()
     do.call('PlotBvT', c(list(community=get('community', self), 
+                              tseries=get('tseries', self), 
+                              main=paste('final time=', time, sep='')), 
+                              get('plot.params', self)))
+}
+
+
+PlotNvTObserver <- function(community, ...)
+{
+    # Inherits from CollectChunksObserver
+    self <- CollectChunksObserver()
+
+    assign('community', community, self)
+    assign('plot.params', list(...), self)
+
+    class(self) <- c('PlotNvTObserver', class(self))
+    return(self)
+}
+
+SimStart.PlotNvTObserver <- function(self, initial.state)
+{
+    NextMethod()
+}
+
+SimChunk.PlotNvTObserver <- function(self, chunk)
+{
+    NextMethod()
+    time <- tail(chunk, 1)[1]
+    do.call('PlotNvT', c(list(community=get('community', self), 
+                              tseries=get('tseries', self), 
+                              main=paste('time=', time, sep='')), 
+                              get('plot.params', self)))
+}
+
+SimEnd.PlotNvTObserver <- function(self, time, final.state)
+{
+    NextMethod()
+    do.call('PlotNvT', c(list(community=get('community', self), 
                               tseries=get('tseries', self), 
                               main=paste('final time=', time, sep='')), 
                               get('plot.params', self)))

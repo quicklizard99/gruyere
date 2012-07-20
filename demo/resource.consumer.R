@@ -1,5 +1,4 @@
-library(gruyere)
-# Resource-consumer
+# Runs a simulation of a simple resource-consumer community
 community <- Community(nodes=data.frame(node=c('R','C'), 
                                         category=c('producer', 'invertebrate'), 
                                         M=c(0.1, 1), 
@@ -17,10 +16,9 @@ spec <- ModelParamsSpec(f.constants=AllFConstantsEqual())
 params <- IntermediateModelParams(community, spec)
 params <- BuildModelParams(community, params) # containing rho,x,z etc
 
-simulation <- LSODASimulation(model=YodzisInnesDyDt, 
-                              params=params, 
-                              sampling.interval=0.1,
-                              use.atol=FALSE)
+simulation <- ODESimulation(model=YodzisInnesDyDt, 
+                            params=params, 
+                            sampling.interval=0.1)
 
 controller <- MaxTimeController(200)
 
@@ -31,40 +29,32 @@ res <- RunSimulation(initial.state=Biomass(community),
                      simulation=simulation,
                      controller=controller, 
                      observers=observers)
+res
 
 tseries <- GetTimeSeries(collector)
 head(tseries)
 
-# Equilibria: eqns 12 and 13 of Yodzis and Innes (1992) on p.1160 using x and 
-# y given in eqns 10 and 11, p 1156.
-Re <- with(params, B0[1,2] / ( (y[1,2]-1)^ (1/(q+1))))
-Ce <- as.numeric(with(params, (fe[1,2]*e[1,2] / x[2]) * Re * (1-Re/K)))
-
-# Equilibria calculated by Mathematica 8. 
-# q and d must be 0. 
-Re.m <- with(params, B0[1,2] / (y[1,2]-1))
-Ce.m <- with(params, -(B0[1,2]*e[1,2]*fe[1,2]*rho[1]*(K+B0[1,2]-K*y[1,2])) / 
-                       ( K*x[2]*(y[1,2]-1)^2 ) )
-Ce.m <- as.numeric(Ce.m)
-stopifnot(isTRUE(all.equal(Re, Re.m)))
-stopifnot(isTRUE(all.equal(Ce, Ce.m)))
-
 # Plot the results
 par(mfrow=c(1,2))
 PlotBvT(community, tseries, col=c(1,2))
-abline(h=log10(Re), lty=2)
-mtext(~R[e], side=4, at=log10(Re), las=1, line=0)
-abline(h=log10(Ce), lty=2, col=2)
-mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
 
-plot(log10(tseries[,2]), log10(tseries[,3]), 
+# Equilibria: eqns 12 and 13 of Yodzis and Innes (1992) on p.1160 using x and 
+# y given in eqns 10 and 11, p 1156.
+Re <- with(params, W[1,2] / ( (y[1,2]-1)^ (1/(q+1))))
+Ce <- as.numeric(with(params, (fe[1,2]*e[1,2] / x[2]) * Re * (1-Re/K)))
+abline(h=log10(Re), lty=2)
+mtext(~R[e], side=4, at=log10(Re), las=1, line=0.5)
+abline(h=log10(Ce), lty=2, col=2)
+mtext(~C[e], side=4, at=log10(Ce), las=1, line=0.5)
+
+plot(log10(tseries[,'R']), log10(tseries[,'C']), 
      xlab=Log10BLabel(community, name="italic(B[R])"), 
      ylab=Log10BLabel(community, name="italic(B[C])"), 
      type="l", main="Consumer vs resource")
 axis(side=3, labels=FALSE)
 axis(side=4, labels=FALSE)
 abline(v=log10(Re))
-mtext(~R[e], side=3, at=log10(Re), las=1, line=0)
+mtext(~R[e], side=3, at=log10(Re), las=1, line=0.5)
 abline(h=log10(Ce))
-mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
+mtext(~C[e], side=4, at=log10(Ce), las=1, line=0.5)
 

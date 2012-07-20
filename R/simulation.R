@@ -7,42 +7,62 @@ RunChunk <- function(self, time, current.state)
     UseMethod("RunChunk")
 }
 
-LSODASimulation <- function(model, params, sampling.interval=1, 
-                            chunk.time=100, extinction.threshold=NULL, 
-                            use.atol=TRUE, atol=extinction.threshold/10, 
-                            print.debug.msgs=FALSE, ...)
+LSODASimulation <- function(use.atol, ...)
+{
+    # use.atol was stupid - lsoda always uses atol
+    # Swallow use.atol
+    warning("LSODASimulation is deprecated. Please use 'ODESimulation' instead")
+    return (ODESimulation(method='lsoda', ...))
+}
+
+ODESimulation <- function(model, params, sampling.interval=1, 
+                          chunk.time=100, extinction.threshold=NULL, 
+                          print.debug.msgs=FALSE, 
+                          method='lsoda', atol, ...)
 {
     # extinction.threshold should be in biomass units
-    # extinction.threshold and atol either single numbers or vectors - one 
+    # extinction.threshold should be either single numbers or vectors - one 
     # number for every species
+    # TODO Allow some extinction.threshold to be NA?
+    stopifnot(is.null(extinction.threshold) || all(extinction.threshold>0))
 
     self <- new.env(hash=TRUE, parent=emptyenv())
-    lsoda.params <- list(func=model, parms=params)
-    lsoda.params <- c(lsoda.params, list(...))
+    ode.params <- list(func=model, parms=params)
+    ode.params <- c(ode.params, list(...))
 
-    if(use.atol)
+    # Set lsoda's atol to be 1/10 of the extinction threshold(s) if appropriate
+    if('lsoda'==method && !is.null(extinction.threshold) && missing(atol))
     {
-        stopifnot(!is.null(atol) && length(atol)>0)
-        lsoda.params[['atol']] <- atol
+        # Set lsoda's atol to be 1/10 of the extinction threshold(s)
+        ode.params[['atol']] <- extinction.threshold
+        if(print.debug.msgs)
+        {
+            print(paste("ODESimulation set lsoda's atol param to 1/10 of", 
+                        "extinction.threshold"))
+                  
+        }
+    }
+    else if(!missing(atol))
+    {
+        ode.params[['atol']] <- atol
     }
 
-    assign('lsoda.params', lsoda.params, self)
+    assign('ode.params', ode.params, self)
 
     assign('print.debug.msgs', print.debug.msgs, self)
 
     stopifnot(sampling.interval>0)
     stopifnot(chunk.time>0)
-    stopifnot(is.null(extinction.threshold) || all(extinction.threshold>0))
     simulation.settings <- list(sampling.interval=sampling.interval, 
                                 chunk.time=chunk.time, 
                                 extinction.threshold=extinction.threshold)
     assign('simulation.settings', simulation.settings, self)
 
-    class(self) <- c('LSODASimulation', class(self))
+    class(self) <- c('ODESimulation', class(self))
     return(self)
 }
 
-RunChunk.LSODASimulation <- function(self, time, current.state)
+RunChunk.ODESimulation <- function(self, time, current.state)
 {
     simulation.settings <- get('simulation.settings', self)
     times <- with(simulation.settings, 
@@ -50,10 +70,8 @@ RunChunk.LSODASimulation <- function(self, time, current.state)
                       to=(time+chunk.time),
                       by=sampling.interval))
 
-    args <- c(get('lsoda.params', self), 
-              list(times=times, y=current.state))
-
-    chunk <- do.call('lsoda', args)
+    args <- c(get('ode.params', self), list(times=times, y=current.state))
+    chunk <- do.call('ode', args)
 
     chunk <- .ChunkEvents(chunk, simulation.settings$extinction.threshold, 
                           get('print.debug.msgs', self))
