@@ -1,10 +1,10 @@
 RunSim <- function(model, params, max.time=1000, sampling.interval=0.1)
 {
     # A testing helper that run a model and returns the resulting time series.
-    simulation <- LSODASimulation(model=model, 
-                                  params=params, 
-                                  sampling.interval=sampling.interval,
-                                  extinction.threshold=1e-20)
+    simulation <- ODESimulation(model=model, 
+                                params=params, 
+                                sampling.interval=sampling.interval,
+                                extinction.threshold=1e-20)
 
     # Collect simulation results in memory
     collector <- CollectChunksObserver()

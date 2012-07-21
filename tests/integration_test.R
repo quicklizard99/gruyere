@@ -43,7 +43,7 @@ TestYodzisInnesModelBestTL84 <- function()
 
         # Per-species extinction threshold are the biomass density of one 
         # individual per volume of water in Tuesday Lake (83337 m^3)
-        simulation <- LSODASimulation(model=model, 
+        simulation <- ODESimulation(model=model, 
                                   params=params, 
                                   sampling.interval=1, 
                                   chunk.time=100,
@@ -110,10 +110,10 @@ TestTrophicCascade <- function()
         params <- BuildModelParams(community, params) # containing rho,x,z etc
 
         # No extinctions
-        simulation <- LSODASimulation(model=YodzisInnesDyDt, 
-                                      params=params, 
-                                      sampling.interval=0.1, 
-                                      atol=1e-20)
+        simulation <- ODESimulation(model=YodzisInnesDyDt, 
+                                    params=params, 
+                                    sampling.interval=0.1,
+                                    atol=1e-20)
 
         # Run the simulation until max.time is reached
         res <- RunSimulation(initial.state=Biomass(params$community), 
