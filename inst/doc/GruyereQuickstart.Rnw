@@ -38,7 +38,6 @@ options(SweaveHooks = list(fig=function() par(mgp=c(2.5,1,0),
                                               cex.main=0.8)))
 @
 
-
 \section{Modular approach}
 Gruyere's modular approach is shown in Fig.\ \ref{fig:modelling_approach}.
 \begin{figure}[h!]
@@ -57,7 +56,7 @@ The \code{RunSimulation} function glues everything together. It evolves the syst
 \end{enumerate}
 
 \section{Walkthrough of a simulation of a resource--consumer system}
-The other blocks are explained below with reference to the `resource.consumer' demo - a simulation of the dynamics of a community containing a single producer and a single consumer.
+Each block in Fig. \ref{fig:modelling_approach} is explained with reference to Gruyere's `resource.consumer' demo - a simulation of the dynamics of a community containing a single producer and a single consumer.
 
 \subsection{Preamble}
 Load the package.
@@ -81,7 +80,7 @@ community <- Community(nodes=data.frame(node=c('R','C'),
 The Yodzis and Innes model requires that all populations have a valid $M$ (with `M.units' in kg) and that all populations have a `category' belonging to one of `producer', 'invertebrate', 'vert.ecto' and 'vert.endo' (Table \ref{tab:model_categories}). The community object also defines the set of trophic links. In this case, the community also contains numerical abundance, $N$. 
 
 \subsection{Model parameters}
-There are three steps to assembling model parameters. Firstly, the parameters specification: the \code{ModelParamsSpec} function returns a vector of single values defining for the model, functional response and growth mode parameters; values of the \textit{f constants} and \textit{a constants}. Values can be specified as parameters to \code{ModelParamsSpec}. If called with no parameters, \code{ModelParamsSpec} uses values of \textit{f constants} and \textit{a constants} given by \cite{YodzisAndInnes1992AmNat} (also shown in \citealp{WilliamsEtAl2007}, first table on p 44). The example below using all \textit{f constants} set to $1$:
+There are three steps to assembling model parameters. Firstly, the parameters specification: the \code{ModelParamsSpec} function returns a vector of single values defining for the model, functional response and growth mode parameters; values of the \textit{f constants} and \textit{a constants}. If called with no parameters, \code{ModelParamsSpec} uses values of \textit{f constants} and \textit{a constants} given by \cite{YodzisAndInnes1992AmNat} (also shown in \citealp{WilliamsEtAl2007}, first table on p 44). Values can be specified as parameters to \code{ModelParamsSpec} to provide deviations from the default values. The example below using all \textit{f constants} set to $1$:
 <<>>=
 spec <- ModelParamsSpec(f.constants=AllFConstantsEqual())
 @
@@ -89,25 +88,28 @@ Let's examine the spec:
 <<>>=
 spec
 @
-\code{IntermediateModelParams} combines the parameter spec with the community and returns a list containing \textit{a constants} \textit{f constants}, $f_J$, $fe$, $e$ and the functional response and growth model parameters $W$, $d$, $q$, $K$ and $a$, equations (\ref{eq:model} and \ref{eq:growth_model}--\ref{eq:functional_response}) (\citealp{WilliamsEtAl2007}, equations 2.8 and 2.9 and 2.10--2.12). The purpose of the intermediate stage is to allow deviations from the values given in the \code{spec}. Changes could be made per-species or per-trophic-link. For example, we might want to investigate the effect of increasing a single species' respiration rate relative to other consumers or we might want to make cannibalistic trophic links more efficient than other trophic links. It is convenient to make these kinds of changes when the parameters are in this easy-to-understand form.
+\code{IntermediateModelParams} combines the parameter spec with the community and returns a list containing \textit{a constants} \textit{f constants}, $f_J$, $fe$, $e$ and the functional response and growth model parameters $W$, $d$, $q$, $K$ and $a$ (\citealp{WilliamsEtAl2007}, equations 2.8--2.9 and 2.10--2.12).
 <<>>=
 params <- IntermediateModelParams(community, spec)
 names(params)
 @
-\code{BuildModelParams} takes the list returned by \code{IntermediateModelParams} and returns a list containing the parameters required by the final model equation \eqref{eq:normalised_model} and (\ref{eq:growth_model}--\ref{eq:functional_response}) (\citealp{WilliamsEtAl2007}, equations 2.17--2.18): $\rho$, $x$, $y$ and $f_e$, $e$ and the functional response and growth model parameters $W$, $d$, $q$, $K$ and $a$.
+The purpose of the intermediate stage is to allow deviations from the values given in the \code{spec}. Changes could be made per-species or per-trophic-link. For example, we might want to investigate the effect of increasing a single species' respiration rate relative to other consumers or we might want to make cannibalistic trophic links more efficient than other trophic links. It is convenient to make these kinds of changes when the parameters are in this easy-to-understand form.
+
+\code{BuildModelParams} takes the list returned by \code{IntermediateModelParams} and returns a list containing the parameters required by the normalised model (\citealp{WilliamsEtAl2007}, equations 2.17--2.18): $\rho$, $x$, $y$ and $f_e$, $e$ and the functional response and growth model parameters $W$, $d$, $q$, $K$ and $a$.
 <<>>=
 params <- BuildModelParams(community, params) # containing rho,x,z etc
 @
 
 \subsection{Simulation and model function}
-There is presently only one simulation object in Gruyere - \code{LSODASimulation} - which uses the \code{lsoda} function from the deSolve package \cite{deSolve}. Gruyere defines two models functions, both of which implement the normalised model equation \eqref{eq:normalised_model} and \ref{eq:growth_model}--\ref{eq:functional_response}). An \R implementation is provided for reference and to test the C implementation. The \R implementation is relatively easy to understand and is included as a reference and for testing the faster C implementation. 
+There is no one `correct' way of solving systems of ordinary differential equations for numerical simulation. Gruyere's \code{ODESimulation} object delegates the task of solving to \code{ode} function provided by the deSolve package \citep{deSolve}, which offers a wide range of methods. By default, the \code{lsoda} method used, which uses the mature and sophisticated ODEPACK fortran library (REFS). This method detects on-the-fly whether or not the system is stiff () or non-stiff () and selects the appropriate method and step size. When the community being simulated exhibits body-mass ratios where consumers are much smaller than their resources (e.g.\ \citealp{BroseEtAl2006EcolLett, OttoEtAl2007Nature}), the sytem will exhibit very fast transients, which \code{lsoda} will not be able to guarantee to solve and the function will generate errors. In such cases, other methods may be more appropriate, such as Runge-Kutta (implemented by e.g.\ the \code{rk45dp7} method in \code{ode}), which pays less attention to such problems.
+
+Gruyere defines two models functions, both of which implement the normalised model, functional response and growth model equations (\ref{eq:normalised_model} and \ref{eq:growth_model}--\ref{eq:functional_response}). The (\code{YodzisInnesDyDt}) function is written in C and is the implementation than will normally be used. An \R implementation (\code{YodzisInnesDyDt\_R}) is also provided. This is relatively easy to understand and is included as a reference and for testing the faster C implementation.
 <<>>=
-simulation <- LSODASimulation(model=YodzisInnesDyDt, 
-                              params=params, 
-                              sampling.interval=0.1,
-                              atol=1e-10)
+simulation <- ODESimulation(model=YodzisInnesDyDt, 
+                            params=params, 
+                            sampling.interval=0.1)
 @
-The time resolution is given by `sampling.interval'. `atol' specifies the absolute error tolerance used by \code{lsoda}. Extinction thresholds are optional and can be set can be set per-population. If a population's biomass density drops below its extinction threshold within a simulation chunk, its biomass density is set to zero, the remainder of the simulation chunk is discarded and the simulation is restarted at the point of extinction. `atol' defaults to `extinction.threshold/10'. The simulation is run in chunks of 100 time units; we could change this by passing a value for the `chunk.time' argument.
+The time resolution is given by `sampling.interval'. Extinction thresholds are optional and can be set can be set per-population. If a population's biomass density drops below its extinction threshold within a simulation chunk, its biomass density is set to zero, the remainder of the simulation chunk is discarded and the simulation is restarted at the point of extinction. In this example, no extinctions will take place. By default, the simulation is run in chunks of 100 time units; we could change this by passing a value for the `chunk.time' argument. Other parameters to the \code{ode} function, such as `atol' and a`rtol' can be passed into \code{ODESimulation}; see the help page for \code{ode} for more information.
 
 \subsection{Controller}
 The controller governs when simulations will be terminated. Gruyere has three different controllers: \code{MaxTimeController}, which halts simulations when a time limit is reached, \code{EquilibriumController}, which halts simulations when all populations reach an equilibrium and \code{RunningAverageController}, which halts simulations when each population's biomass density reaches either an equilibrium or a fluctuating steady state. This example uses the simplest, which terminates simulations when a time limit is reached.
@@ -116,7 +118,7 @@ controller <- MaxTimeController(100)
 @
 
 \subsection{Observers}
-Observers are optional components that are shown time-series chunks of the simulation as it runs. An observer could potentially do anything with a time-series chunk. Gruyere contains many observers and users can write their own. Some pre-defined observers give either textual or graphical feedback. Two useful observers are \code{CollectChunksObserver}, which records all of the simulation chunks in memory, and \code{WriteChunksObserver}, which writes each chunk of the time series to a file. In this example, we use collect the simulation time series in memory and print out the total elapsed time of the simulation.
+Observers are optional components that are shown time-series chunks of the simulation as it runs. An observer could potentially do anything with a time-series chunk. Gruyere contains many observers and users can write their own. Some pre-defined observers give feedback as the simulation runs, for example the \code{PlotNDeviationsObserver}, \code{PlotNvTObserver}, \code{PlotBDeviationsObserver} and \code{PlotBvTObserver} observers show the state of the simulation graphically. Two very useful observers are \code{CollectChunksObserver}, which records all of the simulation chunks in memory, and \code{WriteChunksObserver}, which writes each chunk of the time series to a file as the simulation runs. In this example, we use collect the simulation time series in memory and print out the total elapsed time of the simulation.
 <<>>=
 collector <- CollectChunksObserver() # Collect simulation results in memory
 observers <- list(collector, ElapsedTimeObserver())
@@ -170,165 +172,6 @@ abline(v=log10(Re))
 mtext(~R[e], side=3, at=log10(Re), las=1, line=0)
 abline(h=log10(Ce))
 mtext(~C[e], side=4, at=log10(Ce), las=1, line=0)
-@
-\end{center}
-
-%Vignette 0 - demonstration of a trophic cascade
-
-%Vignette 1 - more complex example using TL84 with params found by my optimisation work
-%CollectChunksObserver + GetTimeSeries
-%WriteChunksObserver
-
-%PlotBvT
-%PlotNvT
-
-%Using res$final.state
-%PlotNDeviations
-%PlotBDeviations
-
-%Averaged over last n steps of time series
-%PlotNDeviations
-%PlotBDeviations
-
-
-%Vignette 2 - Extinction thresholds and observers that provide feedback
-%As vignette 1 but with a lower carrying capacity causing multiple extinctions, with extinction thresholds applied.
-
-%Oscilating systems - extinction thresholds
-
-%Textual feedback observers
-%ExtinctionsFeedbackObserver
-%CurrentTimeObserver
-%ElapsedTimeObserver
-%TimeBetweenChunksObserver
-
-%Graphical feedback observers
-%PlotBDeviationsObserver
-%PlotBvTObserver
-%PlotNDeviationsObserver
-%PlotNvTObserver
-
-%A user-defined observer?
-
-%Vignette 3 - The three different controllers
-%As vignette 2
-%Compare the behaviour of the three different conrollers
-%\code{MaxTimeController}
-%\code{EquilibriumController}
-%\code{RunningAverageController}
-
-%Vignette 4 - Deviations from model parameters
-%Some TL84-based examples
-
-\section{Example  - trophic cascade}
-The fragment below demonstrates that the model together with our chosen functional response and growth model are capable of recreating a classic ecological effect: the trophic cascade. \cite{HairstonEtAl1960AmNat} proposed a simple model of top-down control in which the abundance of herbivores is regulated not by food supply but by predators, freeing primary producers from herbivory and allowing them to reach carrying capacity. Three panels are plotted, each showing a simulation of a different community. Each simulation uses the same model parameters. a) contains just a producer, showing that the producer reaches carrying capacity, marked by a grey dashed line. b) contains a producer and an invertebrate herbivore, showing that the addition of a herbivore results in a density of the producer much lower than carrying capacity. c) contains a producer, a herbivore and a top-level invertebrate predator, showing that the density of the herbivore is limited by the consumption by the predator, allowing the producer to almost reach carrying capacity. The producer is shown green, herbivore in black and top-level predator in red. This top-down `trophic control' effect has demonstrated in simple resource-consumer system, such as the control of an invasive aquatic fern \textit{Salvinia molesta} in Australia by one of its natural enemies, the weevil \textit{Cyrtobagous salviniae} (REF).
-%Schmitz, O.J., P. Hamback, and A.P. Beckerman 2000. Trophic cascades in terrestrial systems: A review of the effect of top predator removals on plants. American Naturalist 155: 141-153
-\begin{center}
-\SweaveOpts{width=8,height=3}
-\setkeys{Gin}{width=\textwidth}
-<<fig=TRUE>>=
-# Three seperate simulations are run, each of a different community. 
-# Each simulation uses the same model parameters. 
-# The first community has only a producer, showing that the producer reaches 
-# carrying capacity. 
-# The second is of a resource-consumer system, showing that the addition of a 
-# herbivore results in a density of the producer much lower than carrying 
-# capacity. 
-# The third is of three-species chain, showing that a predator limits the 
-# density of the herbivore and allows the producer to (almost) reach carrying 
-# capacity.
-
-lwd <- 0.5
-cex <- 0.7
-next.sub <- 1
-Sub <- function(s)
-{
-    mtext(paste(letters[next.sub], ')', sep=''), side=3, at=par('usr')[1],
-          cex=cex, line=1)
-    next.sub <<- next.sub + 1
-}
-
-RunMySimulation <- function(spec, community, max.time=30, ylim=c(-3, 2.5), 
-                            col=c(3, 1, 2))
-{
-    # A helper function that runs a model simulation and plots the resulting
-    # biomass time series.
-
-    # Collect simulation results in memory
-    collector <- CollectChunksObserver()
-
-    # Construct model parameters
-    params <- IntermediateModelParams(community, spec)
-    params <- BuildModelParams(community, params) # containing rho,x,z etc
-
-    # No extinctions
-    simulation <- LSODASimulation(model=YodzisInnesDyDt, 
-                                  params=params, 
-                                  sampling.interval=0.1, 
-                                  atol=1e-20, 
-                                  chunk.time=10)
-
-    # Run the simulation until max.time is reached
-    res <- RunSimulation(initial.state=Biomass(params$community), 
-                         simulation=simulation,
-                         controller=MaxTimeController(max.time=max.time), 
-                         observers=list(collector))
-
-    # Get the matrix of biomass time series
-    tseries <- GetTimeSeries(collector)        
-
-    # Plot biomass time series
-    PlotBvT(community, tseries, category=NP(community, 'node'), 
-            col=col, ylim=ylim, main='', lwd=lwd, xlab='', ylab='')
-    Sub()
-
-    points(rep(0, NumberOfNodes(community)), Log10Biomass(community), 
-           pch=19, col=c(3, 1, 2), cex=cex)
-
-    # Mark carrying capacity
-    lines(c(0, max.time), rep(log10(spec['K']), 2), col='grey', lty=2)
-
-    #abline(h=log10(spec['K']), col='grey', lty=2)
-    #mtext('K', side=4, at=log10(spec['K']), las=1, line=0)
-}
-
-# The same model parameters specification is used by all three simulations
-spec <- ModelParamsSpec(f.constants=AllFConstantsEqual(0.1), K=100, W=0.5, 
-                        q=1)
-
-par(mfrow=c(1,3))
-# 1. Single producer
-single.producer <- Community(nodes=data.frame(node=c('R'), 
-                                              M=1, 
-                                              N=20, 
-                                              category='producer'), 
-                            properties=list(title='Single producer', 
-                                            M.units='kg', N.units='m^-2'))
-RunMySimulation(spec, single.producer)
-
-# 2. Resource-consumer motif
-rc <- Community(nodes=data.frame(node=c('R','C'), 
-                                 M=c(1,5), 
-                                 N=c(20,1), 
-                                 category=c('producer', 'invertebrate')),
-                trophic.links=data.frame(resource='R', consumer='C'), 
-                properties=list(title='Resource-consumer', 
-                                M.units='kg', N.units='m^-2'))
-RunMySimulation(spec, rc)
-
-# 3. Three-species chain motif
-three.species <- Community(nodes=data.frame(node=c('R','C','P'), 
-                                            M=c(1,5,500), 
-                                            N=c(20,1,0.1), 
-                                            category=c('producer', 
-                                                       rep('invertebrate', 2))),
-                           trophic.links=data.frame(resource=c('R', 'C'), 
-                                                    consumer=c('C', 'P')), 
-                           properties=list(title='Three-species chain', 
-                                           M.units='kg', N.units='m^-2'))
-RunMySimulation(spec, three.species)
-
-title(xlab="time (t')", ylab=Log10MLabel(units='m^-2'), outer=TRUE)
 @
 \end{center}
 
