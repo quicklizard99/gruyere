@@ -28,7 +28,7 @@ ODESimulation <- function(model, params, sampling.interval=1,
 
     self <- new.env(hash=TRUE, parent=emptyenv())
     ode.params <- list(func=model, parms=params)
-    ode.params <- c(ode.params, list(...))
+    ode.params <- c(ode.params, list(method=method), list(...))
 
     # Set lsoda's atol to be 1/10 of the extinction threshold(s) if appropriate
     if('lsoda'==method && !is.null(extinction.threshold) && missing(atol))
