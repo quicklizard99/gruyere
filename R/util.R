@@ -13,7 +13,7 @@ LoadMatrix <- function(path)
     return(ts)
 }
 
-UTCTimeString <- function()
+.UTCTimeString <- function()
 {
     # Textual representation of current time
     return(format(Sys.time(), '%Y-%m-%dT%H.%M.%S', tz="UTC", usetz=FALSE))
