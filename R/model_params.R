@@ -35,13 +35,24 @@ BroseEtAl06AValues <- function()
 
 BroseEtAl06AConstants <- function()
 {
-    # per-metabolic category values proposed by Brose Et Al 2006 Ecol Lett
+    # Per-metabolic category values proposed by Brose Et Al 2006 Ecol Lett
     # No constants for vertebrate endotherms
     # ar and aJ are not maxima but realised rates, so should be used with 
     # all f*=1, I think.
     return (list(ar=c(producer=1),
                  aT=c(invertebrate=0.314, vert.ecto=0.88),
                  aJ=c(invertebrate=2.512, vert.ecto=3.52)))
+}
+
+OttoEtAl07AConstants <- function()
+{
+    # Per-metabolic category values proposed by Otto et al 2006 Ecol Lett
+    # No constants for vertebrate ectotherms or endotherms
+    # ar and aJ are not maxima but realised rates, so should be used with 
+    # all f*=1, I think.
+    return(list(ar = c(producer = 1), 
+                aT = c(invertebrate = 0.2227), 
+                aJ = c(invertebrate = 1.7816)))
 }
 
 YodzisInnes92FValues <- function()
