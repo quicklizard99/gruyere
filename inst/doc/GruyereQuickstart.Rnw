@@ -55,7 +55,7 @@ The \code{RunSimulation} function glues everything together. It evolves the syst
   \item if the controller says to terminate the simulation, return the final system state and reason for terminating (both given by the controller) and the final system time
 \end{enumerate}
 
-\section{Walkthrough of a simulation of a resource--consumer system}
+\section{Walk-through of a simulation of a resource--consumer system}
 Each block in Fig. \ref{fig:modelling_approach} is explained with reference to Gruyere's `resource.consumer' demo - a simulation of the dynamics of a community containing a single producer and a single consumer.
 
 \subsection{Preamble}
@@ -77,14 +77,14 @@ community <- Community(nodes=data.frame(node=c('R','C'),
                                     M.units='kg', 
                                     N.units='m^-2'))
 @
-The Yodzis and Innes model requires that all populations have a valid $M$ (with `M.units' in kg) and that all populations have a `category' belonging to one of `producer', 'invertebrate', 'vert.ecto' and 'vert.endo' (Table \ref{tab:model_categories}). The community object also defines the set of trophic links. In this case, the community also contains numerical abundance, $N$. 
+The Yodzis and Innes model requires that all populations have a valid $M$ (with `M.units' in kg) and that all populations have a `category' belonging to one of `producer', 'invertebrate', 'vert.ecto' and 'vert.endo'. The community object also defines the set of trophic links. In this case, the community also contains numerical abundance, $N$. 
 
 \subsection{Model parameters}
 There are three steps to assembling model parameters. Firstly, the parameters specification: the \code{ModelParamsSpec} function returns a vector of single values defining for the model, functional response and growth mode parameters; values of the \textit{f constants} and \textit{a constants}. If called with no parameters, \code{ModelParamsSpec} uses values of \textit{f constants} and \textit{a constants} given by \cite{YodzisAndInnes1992AmNat} (also shown in \citealp{WilliamsEtAl2007}, first table on p 44). Values can be specified as parameters to \code{ModelParamsSpec} to provide deviations from the default values. The example below using all \textit{f constants} set to $1$:
 <<>>=
 spec <- ModelParamsSpec(f.constants=AllFConstantsEqual())
 @
-Let's examine the spec:
+See also \code{YodzisInnes92AConstants}, \code{YodzisInnes92FConstants}, \code{BroseEtAl06AConstants}, \code{OttoEtAl07AConstants}. Let's examine the spec:
 <<>>=
 spec
 @
@@ -101,15 +101,15 @@ params <- BuildModelParams(community, params) # containing rho,x,z etc
 @
 
 \subsection{Simulation and model function}
-There is no one `correct' way of solving systems of ordinary differential equations for numerical simulation. Gruyere's \code{ODESimulation} object delegates the task of solving to \code{ode} function provided by the deSolve package \citep{deSolve}, which offers a wide range of methods. By default, the \code{lsoda} method used, which uses the mature and sophisticated ODEPACK fortran library (REFS). This method detects on-the-fly whether or not the system is stiff () or non-stiff () and selects the appropriate method and step size. When the community being simulated exhibits body-mass ratios where consumers are much smaller than their resources (e.g.\ \citealp{BroseEtAl2006EcolLett, OttoEtAl2007Nature}), the sytem will exhibit very fast transients, which \code{lsoda} will not be able to guarantee to solve and the function will generate errors. In such cases, other methods may be more appropriate, such as Runge-Kutta (implemented by e.g.\ the \code{rk45dp7} method in \code{ode}), which pays less attention to such problems.
+There is no one `correct' way of solving systems of ordinary differential equations for numerical simulation. Gruyere's \code{ODESimulation} object delegates the task of solving to \code{ode} function provided by the deSolve package \citep{deSolve}, which offers a wide range of methods. By default, the \code{lsoda} method used, which uses the mature and sophisticated ODEPACK fortran library \citep{Hindmarsh1983, Petzold1983}. This method detects on-the-fly whether or not the system is stiff or non-stiff and selects the appropriate method and step size. When the community being simulated exhibits body-mass ratios where consumers are much smaller than their resources (e.g.\ \citealp{BroseEtAl2006EcolLett, OttoEtAl2007Nature}), the sytem will exhibit very fast transients, which \code{lsoda} will not be able to guarantee to solve and the function will generate errors. In such cases, other methods may be more appropriate, such as Runge-Kutta (implemented by e.g.\ the \code{rk45dp7} method in \code{ode}), which pays less attention to such problems.
 
-Gruyere defines two models functions, both of which implement the normalised model, functional response and growth model equations (\ref{eq:normalised_model} and \ref{eq:growth_model}--\ref{eq:functional_response}). The (\code{YodzisInnesDyDt}) function is written in C and is the implementation than will normally be used. An \R implementation (\code{YodzisInnesDyDt\_R}) is also provided. This is relatively easy to understand and is included as a reference and for testing the faster C implementation.
+Gruyere defines two models functions, both of which implement the normalised model, functional response and growth model equations. The (\code{YodzisInnesDyDt}) function is written in C and is the implementation than will normally be used. An \R implementation (\code{YodzisInnesDyDt\_R}) is also provided. This is relatively easy to understand and is included as a reference and for testing the faster C implementation.
 <<>>=
 simulation <- ODESimulation(model=YodzisInnesDyDt, 
                             params=params, 
                             sampling.interval=0.1)
 @
-The time resolution is given by `sampling.interval'. Extinction thresholds are optional and can be set can be set per-population. If a population's biomass density drops below its extinction threshold within a simulation chunk, its biomass density is set to zero, the remainder of the simulation chunk is discarded and the simulation is restarted at the point of extinction. In this example, no extinctions will take place. By default, the simulation is run in chunks of 100 time units; we could change this by passing a value for the `chunk.time' argument. Other parameters to the \code{ode} function, such as `atol' and a`rtol' can be passed into \code{ODESimulation}; see the help page for \code{ode} for more information.
+The time resolution is given by `sampling.interval'. Extinction thresholds are optional and can be set can be set per-population. If a population's biomass density drops below its extinction threshold within a simulation chunk, its biomass density is set to zero, the remainder of the simulation chunk is discarded and the simulation is restarted at the point of extinction. In this example, no extinctions will take place. By default, the simulation is run in chunks of 100 time units; we could change this by passing a value for the `chunk.time' argument. Other parameters to the \code{ode} function, such as `atol' and `rtol' can be passed into \code{ODESimulation}; see the help pages for \code{ode} and \code{lsoda} for more information.
 
 \subsection{Controller}
 The controller governs when simulations will be terminated. Gruyere has three different controllers: \code{MaxTimeController}, which halts simulations when a time limit is reached, \code{EquilibriumController}, which halts simulations when all populations reach an equilibrium and \code{RunningAverageController}, which halts simulations when each population's biomass density reaches either an equilibrium or a fluctuating steady state. This example uses the simplest, which terminates simulations when a time limit is reached.
