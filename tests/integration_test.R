@@ -91,7 +91,7 @@ TestYodzisInnesModelBestTL84 <- function()
         # Per-species extinction threshold are the biomass density of one 
         # individual per volume of water in Tuesday Lake (83337 m^3)
         extinction.threshold <- NP(community, 'M')/83337
-        extinction.threshold[gruyere:::.Externals(community)] <- 0
+        extinction.threshold[Externals(community)] <- 0
         simulation <- ODESimulation(model=model, 
                                   params=params, 
                                   sampling.interval=1, 
@@ -103,7 +103,7 @@ TestYodzisInnesModelBestTL84 <- function()
         observers <- list(collector)
 
         B0 <- Biomass(community)
-        B0[gruyere:::.Externals(community)] <- 0
+        B0[Externals(community)] <- 0
         res <- RunSimulation(initial.state=B0,
                              simulation=simulation,
                              controller=controller, 

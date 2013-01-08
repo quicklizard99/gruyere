@@ -1,5 +1,5 @@
 RunSim <- function(model, params, max.time=1000, sampling.interval=0.1, 
-                   B0=Biomass(community))
+                   B0=Biomass(params$community))
 {
     # A testing helper that run a model and returns the resulting time series.
     simulation <- ODESimulation(model=model, 

@@ -66,8 +66,8 @@ CalculateFlux <- function(community, tseries, flux.fn, flux.fn.params,
 
     }
 
-    producers <- .Producers(community)
-    consumers <- .Consumers(community)
+    producers <- Producers(community)
+    consumers <- Consumers(community)
 
     total[,producers] <- growth[,producers]
     total[,consumers] <- -respiration[,consumers]

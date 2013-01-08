@@ -140,35 +140,35 @@ ModelParamsSpec <- function(a.constants=YodzisInnes92AConstants(),
     return (p)
 }
 
-.IsProducer <- function(community)
+IsProducer <- function(community)
 {
     return ('producer'==NP(community, 'category'))
 }
 
-.Producers <- function(community)
+Producers <- function(community)
 {
-    return (names(which(.IsProducer(community))))
+    return (names(which(IsProducer(community))))
 }
 
-.IsConsumer <- function(community)
+IsConsumer <- function(community)
 {
     category <- NP(community, 'category')
     return (category!='producer' & category!='')
 }
 
-.Consumers <- function(community)
+Consumers <- function(community)
 {
-    return (names(which(.IsConsumer(community))))
+    return (names(which(IsConsumer(community))))
 }
 
-.IsExternal <- function(community)
+IsExternal <- function(community)
 {
     return (''==NP(community, 'category'))
 }
 
-.Externals <- function(community)
+Externals <- function(community)
 {
-    return (names(which(.IsExternal(community))))
+    return (names(which(IsExternal(community))))
 }
 
 IntermediateModelParams <- function(community, spec)
@@ -195,8 +195,8 @@ IntermediateModelParams <- function(community, spec)
 
     # Is this community suitable for running this simulation?
     stopifnot('M' %in% NodePropertyNames(community))
-    stopifnot(all(!is.na(NP(community, 'M')[!.IsExternal(community)])))
-    stopifnot(all(is.na(NP(community, 'M')[.IsExternal(community)])))
+    stopifnot(all(!is.na(NP(community, 'M')[!IsExternal(community)])))
+    stopifnot(all(is.na(NP(community, 'M')[IsExternal(community)])))
     stopifnot(all(NP(community, 'category') %in% c('producer', 'invertebrate', 
                                                    'vert.ecto', 'vert.endo', 
                                                    '')))
@@ -204,7 +204,7 @@ IntermediateModelParams <- function(community, spec)
 
     # The model requires at least one producer. Time is normalised to the 
     # producer with the smallest mass.
-    stopifnot(length(.Producers(community))>0)
+    stopifnot(length(Producers(community))>0)
 
     # Some basic checks on the parameters spec
     .CheckModelParamsSpec(spec)
@@ -232,9 +232,9 @@ IntermediateModelParams <- function(community, spec)
 
         e <- matrix(NA, nrow=n, ncol=n)
         colnames(e) <- rownames(e) <- node
-        e[.Externals(community),] <- e.external
-        e[.Producers(community),] <- e.producer
-        e[.Consumers(community),] <- e.consumer
+        e[Externals(community),] <- e.external
+        e[Producers(community),] <- e.producer
+        e[Consumers(community),] <- e.consumer
         e[0==pm] <- NA
 
         fe <- matrix(fe, nrow=n, ncol=n)
@@ -246,7 +246,7 @@ IntermediateModelParams <- function(community, spec)
         # the first of these.
         M <- NP(community, 'M')
         m <- order(M)[1]
-        m <- .Producers(community)[order(M[.IsProducer(community)])[1]]
+        m <- Producers(community)[order(M[IsProducer(community)])[1]]
         m <- NodeNameIndices(community, m)
 
         # Functional response
@@ -256,21 +256,21 @@ IntermediateModelParams <- function(community, spec)
 
         d <- rep(d, n)
         names(d) <- node
-        d[!.IsConsumer(community)] <- NA
+        d[!IsConsumer(community)] <- NA
 
         # Growth model
         a <- matrix(a, nrow=n, ncol=n)
         rownames(a) <- colnames(a) <- node
-        a[!.IsProducer(community),] <- NA
-        a[,!.IsProducer(community)] <- NA
+        a[!IsProducer(community),] <- NA
+        a[,!IsProducer(community)] <- NA
 
         V <- rep(V, n)
         names(V) <- node
-        V[!.IsExternal(community)] <- NA
+        V[!IsExternal(community)] <- NA
 
         Z <- rep(Z, n)
         names(Z) <- node
-        Z[!.IsExternal(community)] <- NA
+        Z[!IsExternal(community)] <- NA
 
         return (list(ar=ParamVector('ar'),
                      aT=ParamVector('aT'),
@@ -320,9 +320,9 @@ BuildModelParams <- function(community, params, exponent=1/4)
     with(params, 
     {
         n <- NumberOfNodes(community)
-        producers <- .Producers(community)
-        consumers <- .Consumers(community)
-        externals <- .Externals(community)
+        producers <- Producers(community)
+        consumers <- Consumers(community)
+        externals <- Externals(community)
         pm <- PredationMatrix(community)
 
         stopifnot(all(is.na(ar[consumers])))
@@ -409,9 +409,9 @@ BuildModelParams <- function(community, params, exponent=1/4)
         # Good to cache vectors of producers and consumers for performance.
 
         # R is 1-indexed
-        producers <- NodeNameIndices(community, .Producers(community))
-        consumers <- NodeNameIndices(community, .Consumers(community))
-        externals <- NodeNameIndices(community, .Externals(community))
+        producers <- NodeNameIndices(community, Producers(community))
+        consumers <- NodeNameIndices(community, Consumers(community))
+        externals <- NodeNameIndices(community, Externals(community))
 
         # C is 0-indexed.
         producers.c <- as.integer(producers-1)
