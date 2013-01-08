@@ -1,4 +1,5 @@
-RunSim <- function(model, params, max.time=1000, sampling.interval=0.1)
+RunSim <- function(model, params, max.time=1000, sampling.interval=0.1, 
+                   B0=Biomass(community))
 {
     # A testing helper that run a model and returns the resulting time series.
     simulation <- ODESimulation(model=model, 
@@ -8,7 +9,7 @@ RunSim <- function(model, params, max.time=1000, sampling.interval=0.1)
 
     # Collect simulation results in memory
     collector <- CollectChunksObserver()
-    res <- RunSimulation(initial.state=Biomass(params$community), 
+    res <- RunSimulation(initial.state=B0, 
                          simulation=simulation,
                          controller=MaxTimeController(max.time=max.time), 
                          observers=list(collector))
@@ -59,7 +60,7 @@ TestGrowthModel <- function()
 
     # SCENARIO 2 - advantage for R1
     # Run simulation using noddy implementation
-    params <- list(rho1=1, rho2=1, a11=1, a12=1, a21=1.1, a22=1, K=500, 
+    params <- list(rho1=1, rho2=1, a11=1, a12=1.1, a21=1, a22=1, K=500, 
                    community=community)
     tseries1 <- RunSim(GrowthDyDt, params)
 
@@ -67,7 +68,7 @@ TestGrowthModel <- function()
     spec <- ModelParamsSpec()
     params <- IntermediateModelParams(community, spec)
     params <- BuildModelParams(community, params) # containing rho,x,z etc
-    params$a[2,1] <- 1.1
+    params$a['R2','R1'] <- 1.1
     tseries2 <- RunSim(YodzisInnesDyDt, params)
 
     # Run simulation using YodzisInnes R implementation
@@ -75,6 +76,99 @@ TestGrowthModel <- function()
 
     stopifnot(isTRUE(all.equal(tseries1, tseries2)))
     stopifnot(isTRUE(all.equal(tseries1, tseries3)))
+
+    # SCENARIO 3 - advantage for R1 with a different order of producers. 
+    # This is to test the matrix multiplication stuff in the C implementation.
+    community <- Community(nodes=data.frame(node=c('R2','R1'), M=c(1,1), 
+                                            N=c(100,150), 
+                                            category=rep('producer', 2)), 
+                           properties=list(title='Two producers motif',
+                                           M.units='kg', N.units='m^-2'))
+
+    # Run simulation using YodzisInnes C implementation
+    spec <- ModelParamsSpec()
+    params <- IntermediateModelParams(community, spec)
+    params <- BuildModelParams(community, params) # containing rho,x,z etc
+    params$a['R2','R1'] <- 1.1
+    tseries2 <- RunSim(YodzisInnesDyDt, params)
+
+    # Run simulation using YodzisInnes R implementation
+    tseries3 <- RunSim(YodzisInnesDyDt_R, params)
+
+    stopifnot(isTRUE(all.equal(tseries1, tseries2[,c('time','R1','R2')])))
+    stopifnot(isTRUE(all.equal(tseries1, tseries3[,c('time','R1','R2')])))
+
+
+    # SCENARIO 4 - advantage for R1 with some non-connected consumers and a 
+    # different order of producers. This is to test the matrix multiplication 
+    # stuff in the C implementation.
+    community <- Community(nodes=data.frame(node=c('C1','R2','C2','R1','C3'), 
+                                            M=rep(1, 5), 
+                                            N=c(1,100,2,150,3), 
+                                            category=c('invertebrate',
+                                                       'producer',
+                                                       'invertebrate',
+                                                       'producer',
+                                                       'invertebrate')), 
+                           properties=list(title='Two producers motif',
+                                           M.units='kg', N.units='m^-2'))
+
+    # Run simulation using YodzisInnes C implementation
+    spec <- ModelParamsSpec()
+    params <- IntermediateModelParams(community, spec)
+    params <- BuildModelParams(community, params) # containing rho,x,z etc
+    params$a['R2','R1'] <- 1.1
+    tseries2 <- RunSim(YodzisInnesDyDt, params)
+
+    # Run simulation using YodzisInnes R implementation
+    tseries3 <- RunSim(YodzisInnesDyDt_R, params)
+
+    stopifnot(isTRUE(all.equal(tseries1[,], tseries2[,c('time','R1','R2')])))
+    stopifnot(isTRUE(all.equal(tseries1[,], tseries3[,c('time','R1','R2')])))
+}
+
+TestExternalInputs <- function()
+{
+    # No consumption of detritus
+    community <- Community(nodes=data.frame(node=c('D','C','P'), 
+                                            M=c(NA, 1, 1), 
+                                            N=c(NA, 10, 10), 
+                                            category=c('', 'invertebrate', 'producer')), 
+                           properties=list(title='Detritivore',
+                                           M.units='kg', N.units='m^-2'))
+
+    # Starve to death
+    spec <- ModelParamsSpec()
+    params <- IntermediateModelParams(community, spec)
+    params <- BuildModelParams(community, params) # containing rho,x,z etc
+
+    B0 <- Biomass(community)
+    B0['D'] <- 10
+    tseries1 <- RunSim(YodzisInnesDyDt, params, B0=B0)
+    tseries2 <- RunSim(YodzisInnesDyDt_R, params, B0=B0)
+
+    stopifnot(isTRUE(all.equal(tseries1, tseries2)))
+
+    # Consumption of detritus
+    community <- Community(nodes=data.frame(node=c('D','C','P'), 
+                                            M=c(NA, 1, 1), 
+                                            N=c(NA, 10, 10), 
+                                            category=c('', 'invertebrate', 'producer')), 
+                           trophic.links=data.frame(resource='D', consumer='C'),
+                           properties=list(title='Detritivore',
+                                           M.units='kg', N.units='m^-2'))
+
+    spec <- ModelParamsSpec()
+    params <- IntermediateModelParams(community, spec)
+    params <- BuildModelParams(community, params) # containing rho,x,z etc
+
+    B0 <- Biomass(community)
+    B0['D'] <- 10
+    tseries1 <- RunSim(YodzisInnesDyDt, params, B0=B0)
+    tseries2 <- RunSim(YodzisInnesDyDt_R, params, B0=B0)
+
+    stopifnot(isTRUE(all.equal(tseries1, tseries2)))
+
 }
 
 TestYodzisInnesModelMotifs <- function()

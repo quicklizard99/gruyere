@@ -150,7 +150,8 @@ PlotBDeviations <- function(community, B.now,
 
     if(missing(col))
     {
-        col <- DefaultCategoryColours()[NP(community, 'category')]
+        col <- cheddar:::.GraphParamFromSpec(NP(community, 'category'), 
+                                             DefaultCategoryColours(), 'black')
     }
 
     if(!is.null(from.time))

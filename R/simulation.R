@@ -24,7 +24,7 @@ ODESimulation <- function(model, params, sampling.interval=1,
     # extinction.threshold should be either single numbers or vectors - one 
     # number for every species
     # TODO Allow some extinction.threshold to be NA?
-    stopifnot(is.null(extinction.threshold) || all(extinction.threshold>0))
+    stopifnot(is.null(extinction.threshold) || all(!is.na(extinction.threshold)))
 
     self <- new.env(hash=TRUE, parent=emptyenv())
     ode.params <- list(func=model, parms=params)
@@ -33,12 +33,14 @@ ODESimulation <- function(model, params, sampling.interval=1,
     # Set lsoda's atol to be 1/10 of the extinction threshold(s) if appropriate
     if('lsoda'==method && !is.null(extinction.threshold) && missing(atol))
     {
-        # Set lsoda's atol to be 1/10 of the extinction threshold(s)
-        ode.params[['atol']] <- extinction.threshold
+        # Set lsoda's atol to be the same as the extinction threshold(s)
+        atol <- extinction.threshold/10
+        atol[0==atol] <- min(atol[atol>0])
+        ode.params[['atol']] <- atol
         if(print.debug.msgs)
         {
-            print(paste("ODESimulation set lsoda's atol param to 1/10 of", 
-                        "extinction.threshold"))
+            print(paste("ODESimulation set lsoda's atol param to", 
+                        "extinction thresholds"))
                   
         }
     }
