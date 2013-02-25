@@ -75,15 +75,11 @@ void PrintParms(const int *n,
                 const int *n_producers, 
                 const int *consumers, 
                 const int *n_consumers, 
-                const int *externals, 
-                const int *n_externals, 
                 const double *rho, 
                 const double *x, 
                 const double *y, 
                 const double *e, 
-                const double *fe,
-                const double *v,
-                const double *z)
+                const double *fe)
 {
     /* Prints the parameters */
     Rprintf("n: [%d]\n", *n);
@@ -94,14 +90,11 @@ void PrintParms(const int *n,
     PrintMatrix("W", W, n);
     PrintIntVector("producers", producers, n_producers);
     PrintIntVector("consumers", consumers, n_consumers);
-    PrintIntVector("externals", externals, n_externals);
     PrintVector("rho", rho, n);
     PrintVector("x", x, n);
     PrintMatrix("y", y, n);
     PrintMatrix("e", e, n);
     PrintMatrix("fe", fe, n);
-    PrintVector("v", v, n);
-    PrintVector("z", z, n);
 }
 
 void YodzisInnesState(const int *n_species,     /* n species */
@@ -114,22 +107,17 @@ void YodzisInnesState(const int *n_species,     /* n species */
                       const int *n_producers,   /* n items in producers */
                       const int *consumers,     /* vector */
                       const int *n_consumers,   /* n items in consumers */
-                      const int *externals,     /* vector */
-                      const int *n_externals,   /* n items in externals */
                       const double *rho,        /* vector of length n */
                       const double *x,          /* vector of length n */
                       const double *y,          /* matrix of n x n */
                       const double *e,          /* n x n matrix */
                       const double *fe,         /* n x n matrix */
-                      const double *v,          /* vector of length n */
-                      const double *z,          /* vector of length n */
                       const double *B,          /* vector of length n */
                       double *dydt,             /* Output vector of length n */
                       double *growth,           /* Output vector of length n */
                       double *respiration,      /* Output vector of length n */
                       double *assimilation,     /* Output matrix of nxn */
-                      double *consumption,      /* Output matrix of nxn */
-                      double *externals_sum     /* Output vector of length n */
+                      double *consumption       /* Output matrix of nxn */
                       )
 {
     /* Implements the model equations of Williams et al. 2007. Homage to 
@@ -148,8 +136,7 @@ void YodzisInnesState(const int *n_species,     /* n species */
     DEBUG(Rprintf("*************************\n"));
     DEBUG(PrintVector("B", B, n_species));
     DEBUG(PrintParms(n_species, K, a, q, d, W, producers, n_producers, 
-                     consumers, n_consumers, externals, n_externals, rho, x, y, 
-                     e, fe, v, z));
+                     consumers, n_consumers, rho, x, y, e, fe));
 
     /* Functional response numerator and denominator */
     /* Williams 2008 Eq 4 */
@@ -245,14 +232,6 @@ void YodzisInnesState(const int *n_species,     /* n species */
         dydt[j] = respiration[j] + assimilation_t[j] - consumption_t[j];
     }
 
-    /* External inputs */
-    for(int external=0; external<*n_externals; external++)
-    {
-        const int j = externals[external];
-        externals_sum[j] = v[j] - z[j] * B[j];
-        dydt[j] = externals_sum[j] - consumption_t[j];
-    }
-
     DEBUG(PrintVector("growth", growth, n_species));
     DEBUG(Rprintf("\n"));
 
@@ -265,9 +244,6 @@ void YodzisInnesState(const int *n_species,     /* n species */
 
     DEBUG(PrintMatrix("assimilation", assimilation, n_species));
     DEBUG(PrintVector("assimilation_t (col sums)", assimilation_t, n_species));
-    DEBUG(Rprintf("\n"));
-
-    DEBUG(PrintVector("externals_sum", externals_sum, n_species));
     DEBUG(Rprintf("\n"));
 
     DEBUG(PrintVector("dydt", dydt, n_species));
@@ -310,8 +286,8 @@ void YodzisInnesFast(const int *neq,    /* n equations */
 
     /* If you want to try this function, add to BuildModelParams():
 
-   dll.ipar=c(length(producers), length(consumers), length(externals)
-              producers.c, consumers.c, externals.c), 
+   dll.ipar=c(length(producers), length(consumers), 
+              producers.c, consumers.c), 
    dll.rpar=c(K,a,q,d,W,rho,x,y,e,fe,v,z), 
    dll.nout=3*NumberOfSpecies(community) + 
             2*NumberOfSpecies(community)^2)
@@ -359,7 +335,6 @@ void YodzisInnesFast(const int *neq,    /* n equations */
     if(ip[2]<5) error("Must have at least 5 integer parameters");
     const int *n_producers = ip + 3;
     const int *n_consumers = ip + 4;
-    const int *n_externals = ip + 5;
 
     DEBUG(PrintIntVector("n_producers", n_producers, &debug_print_one));
     DEBUG(PrintIntVector("n_consumers", n_consumers, &debug_print_one));
@@ -371,14 +346,12 @@ void YodzisInnesFast(const int *neq,    /* n equations */
 
     const int *producers = ip + 6;
     const int *consumers = producers + *n_producers;
-    const int *externals = consumers + *n_consumers;
 
     /* Check length of yout */
     const int n_outputs = n +       /* growth - vector of length n */
                           n +       /* respiration - vector of length n */
                           n*n +     /* assimilation - matrix of nxn */
-                          n*n +     /* growth - vector of length n */
-                          n;        /* externals_sum - vector of length n */
+                          n*n;      /* growth - vector of length n */
 
     const int n_params = 1 +        /* K - single value */
                          n*n +      /* a - matrix of nxn*/
@@ -413,9 +386,8 @@ void YodzisInnesFast(const int *neq,    /* n equations */
     double *respiration=growth+n;           /* Output vector of length n */
     double *assimilation=respiration+n;     /* Output matrix of nxn */
     double *consumption=assimilation+n*n;   /* Output matrix of nxn */
-    double *externals_sum=consumption+n*n;  /* Output vector of length n */
 
-    const double *K=externals_sum+n;    /* Global carrying capacity */
+    const double *K=consumption+n*n;    /* Global carrying capacity */
     const double *a=K+1;                /* n x n matrix */
     const double *q=a+n*n;              /* Single number */
     const double *d=q+1;                /* vector of length n */
@@ -425,8 +397,6 @@ void YodzisInnesFast(const int *neq,    /* n equations */
     const double *y=x+n;                /* matrix of n x n */
     const double *e=y+n*n;              /* n x n matrix */
     const double *fe=e+n*n;             /* n x n matrix */
-    const double *v=fe+n*n;            /* vector of length n */
-    const double *z=v+n;    /* vector of length n */
 
     YodzisInnesState(neq, 
                      K, 
@@ -438,20 +408,15 @@ void YodzisInnesFast(const int *neq,    /* n equations */
                      n_producers, 
                      consumers, 
                      n_consumers, 
-                     externals,
-                     n_externals,
                      rho, 
                      x, 
                      y, 
                      e, 
                      fe, 
-                     v, 
-                     z, 
                      B, 
                      dydt, 
                      growth, 
                      respiration, 
                      assimilation, 
-                     consumption,
-                     externals_sum);
+                     consumption);
 }

@@ -91,7 +91,6 @@ TestYodzisInnesModelBestTL84 <- function()
         # Per-species extinction threshold are the biomass density of one 
         # individual per volume of water in Tuesday Lake (83337 m^3)
         extinction.threshold <- NP(community, 'M')/83337
-        extinction.threshold[Externals(community)] <- 0
         simulation <- ODESimulation(model=model, 
                                   params=params, 
                                   sampling.interval=1, 
@@ -102,9 +101,7 @@ TestYodzisInnesModelBestTL84 <- function()
         collector <- CollectChunksObserver()
         observers <- list(collector)
 
-        B0 <- Biomass(community)
-        B0[Externals(community)] <- 0
-        res <- RunSimulation(initial.state=B0,
+        res <- RunSimulation(initial.state=Biomass(community),
                              simulation=simulation,
                              controller=controller, 
                              observers=observers)
@@ -127,30 +124,6 @@ TestYodzisInnesModelBestTL84 <- function()
 
     # As above but with the community ordered by decreasing body size.
     community <- OrderCommunity(RemoveIsolatedNodes(TL84), 'M', decreasing=TRUE)
-    a <- RunSimWithModel(community, YodzisInnesDyDt)
-    b <- RunSimWithModel(community, YodzisInnesDyDt_R)
-    stopifnot(all.equal(a, b))
-
-    # With an external input that has no input, no decay and no consumers
-    properties <- CPS(TL84)
-    properties$title <- "Tuesday Lake sampled in 1984, with detritus"
-    nodes <- NPS(RemoveIsolatedNodes(TL84))[,c('node','M','N','category')]
-    nodes <- rbind(nodes, data.frame(node='Detritus',M=NA,N=NA,category=''))
-    tl <- TLPS(TL84)
-    community <- Community(nodes=nodes, properties=properties, trophic.links=tl)
-    a <- RunSimWithModel(community, YodzisInnesDyDt)
-    b <- RunSimWithModel(community, YodzisInnesDyDt_R)
-    stopifnot(all.equal(a, b))
-
-    # With an external input that has no input, no decay and many consumers
-    properties <- CPS(TL84)
-    properties$title <- "Tuesday Lake sampled in 1984, with detritus"
-    nodes <- NPS(RemoveIsolatedNodes(TL84))[,c('node','M','N','category')]
-    nodes <- rbind(nodes, data.frame(node='Detritus',M=NA,N=NA,category=''))
-    tl <- TLPS(TL84)
-    tl <- rbind(tl, data.frame(resource='Detritus', 
-                               consumer=NonBasalNodes(RemoveIsolatedNodes(TL84))))
-    community <- Community(nodes=nodes, properties=properties, trophic.links=tl)
     a <- RunSimWithModel(community, YodzisInnesDyDt)
     b <- RunSimWithModel(community, YodzisInnesDyDt_R)
     stopifnot(all.equal(a, b))

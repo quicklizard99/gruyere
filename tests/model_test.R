@@ -127,50 +127,6 @@ TestGrowthModel <- function()
     stopifnot(isTRUE(all.equal(tseries1[,], tseries3[,c('time','R1','R2')])))
 }
 
-TestExternalInputs <- function()
-{
-    # No consumption of detritus
-    community <- Community(nodes=data.frame(node=c('D','C','P'), 
-                                            M=c(NA, 1, 1), 
-                                            N=c(NA, 10, 10), 
-                                            category=c('', 'invertebrate', 'producer')), 
-                           properties=list(title='Detritivore',
-                                           M.units='kg', N.units='m^-2'))
-
-    # Starve to death
-    spec <- ModelParamsSpec()
-    params <- IntermediateModelParams(community, spec)
-    params <- BuildModelParams(community, params) # containing rho,x,z etc
-
-    B0 <- Biomass(community)
-    B0['D'] <- 10
-    tseries1 <- RunSim(YodzisInnesDyDt, params, B0=B0)
-    tseries2 <- RunSim(YodzisInnesDyDt_R, params, B0=B0)
-
-    stopifnot(isTRUE(all.equal(tseries1, tseries2)))
-
-    # Consumption of detritus
-    community <- Community(nodes=data.frame(node=c('D','C','P'), 
-                                            M=c(NA, 1, 1), 
-                                            N=c(NA, 10, 10), 
-                                            category=c('', 'invertebrate', 'producer')), 
-                           trophic.links=data.frame(resource='D', consumer='C'),
-                           properties=list(title='Detritivore',
-                                           M.units='kg', N.units='m^-2'))
-
-    spec <- ModelParamsSpec()
-    params <- IntermediateModelParams(community, spec)
-    params <- BuildModelParams(community, params) # containing rho,x,z etc
-
-    B0 <- Biomass(community)
-    B0['D'] <- 10
-    tseries1 <- RunSim(YodzisInnesDyDt, params, B0=B0)
-    tseries2 <- RunSim(YodzisInnesDyDt_R, params, B0=B0)
-
-    stopifnot(isTRUE(all.equal(tseries1, tseries2)))
-
-}
-
 TestYodzisInnesModelMotifs <- function()
 {
     # Ensures that the R and C model implementations both give the same time

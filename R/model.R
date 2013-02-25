@@ -18,16 +18,13 @@ YodzisInnesDyDt <- function(time, B, params)
               params$q, params$d, params$W, 
               params$producers.c, params$n.producers, 
               params$consumers.c, params$n.consumers,
-              params$externals.c, params$n.externals,
               params$rho, params$x, params$y, params$e, params$fe, 
-              params$v, params$z, 
               B, 
               dydt=numeric(params$n.species), 
               numeric(params$n.species), # growth
               numeric(params$n.species), # respiration
               numeric(params$n.species*params$n.species), # assimilation
               numeric(params$n.species*params$n.species), # consumption
-              numeric(params$n.species), # external.sum
               NAOK=TRUE, DUP=FALSE)
 
     # We don't do anything with the last 4 output parameters - we are only 
@@ -61,22 +58,18 @@ YodzisInnesFlux <- function(B, params)
               params$q, params$d, params$W, 
               params$producers.c, params$n.producers, 
               params$consumers.c, params$n.consumers,
-              params$externals.c, params$n.externals,
-              params$rho, params$x, params$y, params$e, params$fe, 
-              params$v, params$z, B, 
+              params$rho, params$x, params$y, params$e, params$fe, B, 
               dydt=numeric(params$n.species), 
               growth=numeric(params$n.species), 
               respiration=numeric(params$n.species), 
               assimilation=numeric(params$n.species*params$n.species), 
               consumption=numeric(params$n.species*params$n.species), 
-              external.sum=numeric(params$n.species), 
               NAOK=TRUE, DUP=FALSE)
 
     dim(res$assimilation) <- dim(res$consumption) <- 
             c(params$n.species, params$n.species)
     # Not interested in dydt here.
-    return(res[c('growth', 'respiration', 'assimilation', 'consumption', 
-                 'external.sum')])
+    return(res[c('growth', 'respiration', 'assimilation', 'consumption')])
 }
 
 YodzisInnesDyDt_R <- function(time, B, params)
@@ -107,7 +100,6 @@ YodzisInnesDyDt_R <- function(time, B, params)
     dydt <- rep(NA, length(B))
     dydt[params$producers] <- flux$growth
     dydt[params$consumers] <- flux$respiration
-    dydt[params$externals] <- flux$external.sum
 
     dydt <- dydt - rowSums(flux$consumption, na.rm=TRUE) + 
             colSums(flux$assimilation, na.rm=TRUE)
@@ -157,13 +149,10 @@ YodzisInnesFlux_R <- function(B, params)
 
         consumption <- assimilation / (fe*e)
 
-        external.sum <- v[externals] - z[externals]*B[externals]
-
         return(list(growth=growth, 
                     respiration=respiration,
                     consumption=consumption,
-                    assimilation=assimilation, 
-                    external.sum=external.sum))
+                    assimilation=assimilation))
     })
 }
 

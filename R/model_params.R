@@ -104,16 +104,11 @@ AllFConstantsEqual <- function(v=1)
         stopifnot(0<K && K<Inf)
         stopifnot(1==length(a))
         stopifnot(0<=a && a<Inf)
-        stopifnot(1==length(V))
-        stopifnot(0<=V)
-        stopifnot(1==length(Z))
-        stopifnot(0<=Z)
     })
 }
 
 ModelParamsSpec <- function(a.constants=YodzisInnes92AConstants(),
                             f.constants=YodzisInnes92FConstants(), 
-                            e.external=0.85, 
                             e.producer=0.45, 
                             e.consumer=0.85, 
                             fe=1, 
@@ -122,9 +117,7 @@ ModelParamsSpec <- function(a.constants=YodzisInnes92AConstants(),
                             d=0,     # Predator interference
                             q=0,     # Shape of response
                             K=500,   # Carrying capacity
-                            a=1, 
-                            V=0,
-                            Z=0)
+                            a=1)
 {
     if(!missing(B0))
     {
@@ -133,9 +126,9 @@ ModelParamsSpec <- function(a.constants=YodzisInnes92AConstants(),
         B0 <- W
     }
 
-    p <- c(unlist(a.constants), unlist(f.constants), e.external=e.external, 
+    p <- c(unlist(a.constants), unlist(f.constants), 
            e.producer=e.producer, e.consumer=e.consumer, 
-           fe=fe, W=W, d=d, q=q, K=K, a=a, V=V, Z=Z)
+           fe=fe, W=W, d=d, q=q, K=K, a=a)
     .CheckModelParamsSpec(p)
     return (p)
 }
@@ -159,16 +152,6 @@ IsConsumer <- function(community)
 Consumers <- function(community)
 {
     return (names(which(IsConsumer(community))))
-}
-
-IsExternal <- function(community)
-{
-    return (''==NP(community, 'category'))
-}
-
-Externals <- function(community)
-{
-    return (names(which(IsExternal(community))))
 }
 
 IntermediateModelParams <- function(community, spec)
@@ -195,11 +178,8 @@ IntermediateModelParams <- function(community, spec)
 
     # Is this community suitable for running this simulation?
     stopifnot('M' %in% NodePropertyNames(community))
-    stopifnot(all(!is.na(NP(community, 'M')[!IsExternal(community)])))
-    stopifnot(all(is.na(NP(community, 'M')[IsExternal(community)])))
     stopifnot(all(NP(community, 'category') %in% c('producer', 'invertebrate', 
-                                                   'vert.ecto', 'vert.endo', 
-                                                   '')))
+                                                   'vert.ecto', 'vert.endo')))
     stopifnot('kg'==CP(community, 'M.units'))
 
     # The model requires at least one producer. Time is normalised to the 
@@ -232,7 +212,6 @@ IntermediateModelParams <- function(community, spec)
 
         e <- matrix(NA, nrow=n, ncol=n)
         colnames(e) <- rownames(e) <- node
-        e[Externals(community),] <- e.external
         e[Producers(community),] <- e.producer
         e[Consumers(community),] <- e.consumer
         e[0==pm] <- NA
@@ -264,14 +243,6 @@ IntermediateModelParams <- function(community, spec)
         a[!IsProducer(community),] <- NA
         a[,!IsProducer(community)] <- NA
 
-        V <- rep(V, n)
-        names(V) <- node
-        V[!IsExternal(community)] <- NA
-
-        Z <- rep(Z, n)
-        names(Z) <- node
-        Z[!IsExternal(community)] <- NA
-
         return (list(ar=ParamVector('ar'),
                      aT=ParamVector('aT'),
                      aJ=ParamVector('aJ'),
@@ -282,8 +253,8 @@ IntermediateModelParams <- function(community, spec)
                      e=e,
                      fe=fe, 
                      W=W, d=d, q=q,   # Functional response
-                     K=K, a=a,        # Growth model
-                     V=V, Z=Z))
+                     K=K, a=a        # Growth model
+                     ))
     })
 }
 
@@ -322,31 +293,25 @@ BuildModelParams <- function(community, params, exponent=1/4)
         n <- NumberOfNodes(community)
         producers <- Producers(community)
         consumers <- Consumers(community)
-        externals <- Externals(community)
         pm <- PredationMatrix(community)
 
         stopifnot(all(is.na(ar[consumers])))
-        stopifnot(all(is.na(ar[externals])))
         stopifnot(all(0<ar[producers] & ar[producers]<Inf))
         stopifnot(n==length(ar))
 
         stopifnot(all(is.na(aT[producers])))
-        stopifnot(all(is.na(aT[externals])))
         stopifnot(all(0<aT[consumers] & aT[consumers]<Inf))
         stopifnot(n==length(aT))
 
         stopifnot(all(is.na(aJ[producers])))
-        stopifnot(all(is.na(aJ[externals])))
         stopifnot(all(0<aJ[consumers] & aJ[consumers]<Inf))
         stopifnot(n==length(aJ))
 
         stopifnot(all(is.na(fr[consumers])))
-        stopifnot(all(is.na(fr[externals])))
         stopifnot(all(0<=fr[producers] & fr[producers]<Inf))
         stopifnot(n==length(fr))
 
         stopifnot(all(is.na(fT[producers])))
-        stopifnot(all(is.na(fT[externals])))
         stopifnot(all(0<=fT[consumers] & fT[consumers]<Inf))
         stopifnot(n==length(fT))
 
@@ -374,25 +339,15 @@ BuildModelParams <- function(community, params, exponent=1/4)
         stopifnot(all(c(n,n) == dim(W)))
 
         stopifnot(all(is.na(d[producers]))) 
-        stopifnot(all(is.na(d[externals]))) 
         stopifnot(all(0<=d[consumers] & d[consumers]<=Inf))
         stopifnot(all(1==length(q)))
         stopifnot(0<=q & q<=Inf)
         stopifnot(all(0<K & K<Inf))
 
         stopifnot(all(is.na(a[consumers,consumers])))
-        stopifnot(all(is.na(a[externals,externals])))
         stopifnot(all(0<a[producers,producers] & 
                         a[producers,producers]<Inf))
         stopifnot(all(c(n,n) == dim(a)))
-
-        stopifnot(all(is.na(V[producers])))
-        stopifnot(all(is.na(V[consumers])))
-        stopifnot(all(0<=V[externals] & V[externals]<Inf))
-
-        stopifnot(all(is.na(Z[producers])))
-        stopifnot(all(is.na(Z[consumers])))
-        stopifnot(all(0<=Z[externals] & Z[externals]<Inf))
     })
 
     with(c(community, params), 
@@ -411,7 +366,6 @@ BuildModelParams <- function(community, params, exponent=1/4)
         # R is 1-indexed
         producers <- NodeNameIndices(community, Producers(community))
         consumers <- NodeNameIndices(community, Consumers(community))
-        externals <- NodeNameIndices(community, Externals(community))
 
         # C is 0-indexed.
         producers.c <- as.integer(producers-1)
@@ -424,21 +378,9 @@ BuildModelParams <- function(community, params, exponent=1/4)
             consumers.c <- 0    # Can't pass value of NULL as arg to .C()
         }
 
-        if(length(externals)>0)
-        {
-            externals.c <- as.integer(externals-1)
-        }
-        else
-        {
-            externals.c <- 0    # Can't pass value of NULL as arg to .C()
-        }
-
         # A multiplier to convert units of t' (model equations) to years
         # Homage to Yodzis and Innes, 2.13 (p 42):
         one.t.prime <- 1/as.numeric(fr[m]*ar[m]*(M[m]^-exponent))
-
-        v <- V * one.t.prime
-        z <- Z * one.t.prime
 
         params <- list(community=community, 
                        n.species=NumberOfNodes(community), 
@@ -448,13 +390,9 @@ BuildModelParams <- function(community, params, exponent=1/4)
                        consumers=consumers, 
                        consumers.c=consumers.c, 
                        n.consumers=length(consumers),
-                       externals=externals, 
-                       externals.c=externals.c, 
-                       n.externals=length(externals),
                        rho=rho, x=x, y=y, e=e, fe=fe, 
                        W=W, d=d, q=q, # Functional response
                        K=K, a=a,      # Growth model
-                       v=v, z=z,      # Inputs and decays
                        # The following are not required by model equations but 
                        # are useful for subsequent analyses.
                        m=m, one.t.prime=one.t.prime)
