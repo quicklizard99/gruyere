@@ -126,9 +126,8 @@ ModelParamsSpec <- function(a.constants=YodzisInnes92AConstants(),
         B0 <- W
     }
 
-    p <- c(unlist(a.constants), unlist(f.constants), 
-           e.producer=e.producer, e.consumer=e.consumer, 
-           fe=fe, W=W, d=d, q=q, K=K, a=a)
+    p <- c(unlist(a.constants), unlist(f.constants), e.producer=e.producer, 
+           e.consumer=e.consumer, fe=fe, W=W, d=d, q=q, K=K, a=a)
     .CheckModelParamsSpec(p)
     return (p)
 }
@@ -178,6 +177,7 @@ IntermediateModelParams <- function(community, spec)
 
     # Is this community suitable for running this simulation?
     stopifnot('M' %in% NodePropertyNames(community))
+    stopifnot(all(!is.na(NP(community, 'M'))))
     stopifnot(all(NP(community, 'category') %in% c('producer', 'invertebrate', 
                                                    'vert.ecto', 'vert.endo')))
     stopifnot('kg'==CP(community, 'M.units'))
@@ -253,8 +253,7 @@ IntermediateModelParams <- function(community, spec)
                      e=e,
                      fe=fe, 
                      W=W, d=d, q=q,   # Functional response
-                     K=K, a=a        # Growth model
-                     ))
+                     K=K, a=a))        # Growth model
     })
 }
 

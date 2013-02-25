@@ -18,8 +18,7 @@ YodzisInnesDyDt <- function(time, B, params)
               params$q, params$d, params$W, 
               params$producers.c, params$n.producers, 
               params$consumers.c, params$n.consumers,
-              params$rho, params$x, params$y, params$e, params$fe, 
-              B, 
+              params$rho, params$x, params$y, params$e, params$fe, B, 
               dydt=numeric(params$n.species), 
               numeric(params$n.species), # growth
               numeric(params$n.species), # respiration

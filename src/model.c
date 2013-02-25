@@ -288,8 +288,8 @@ void YodzisInnesFast(const int *neq,    /* n equations */
 
    dll.ipar=c(length(producers), length(consumers), 
               producers.c, consumers.c), 
-   dll.rpar=c(K,a,q,d,W,rho,x,y,e,fe,v,z), 
-   dll.nout=3*NumberOfSpecies(community) + 
+   dll.rpar=c(K,a,q,d,W,rho,x,y,e,fe), 
+   dll.nout=2*NumberOfSpecies(community) + 
             2*NumberOfSpecies(community)^2)
 
 
