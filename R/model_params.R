@@ -351,14 +351,13 @@ BuildModelParams <- function(community, params, exponent=1/4)
 
     with(c(community, params), 
     {
+        S <- NumberOfNodes(community)
         M <- NP(community, 'M')
 
         m.term <- ((M[m]/M)^exponent)
         rho <- ((fr * ar)/(fr[m] * ar[m])) * m.term
         x <- ((fT * aT)/(fr[m] * ar[m])) * m.term
-        y <- fJ * 
-             matrix(aJ, nrow=length(M), ncol=length(M), byrow=TRUE) / 
-             matrix(fT*aT, nrow=length(M), ncol=length(M), byrow=TRUE)
+        y <- fJ * matrix(aJ/(fT*aT), nrow=S, ncol=S, byrow=TRUE)
 
         # Good to cache vectors of producers and consumers for performance.
 
