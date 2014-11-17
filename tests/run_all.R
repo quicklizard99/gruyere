@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 options(warn=2)
 library(gruyere)
 
